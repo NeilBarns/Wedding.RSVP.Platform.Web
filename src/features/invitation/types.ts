@@ -50,3 +50,24 @@ export type PublicInvitationData = {
   invitation: PublicInvitation
   wedding: WeddingSummary
 }
+
+export type RsvpDecision = Exclude<AttendanceStatus, 'pending'>
+
+export type RsvpGuestPayload = {
+  id: number
+  attendanceStatus: RsvpDecision
+  dietaryRequirements: string | null
+  accessibilityRequirements: string | null
+}
+
+export type RsvpPayload = {
+  guests: RsvpGuestPayload[]
+  contactNumber: string | null
+  email: string | null
+  message: string | null
+}
+
+export type RsvpConfirmationData = {
+  invitation: PublicInvitation
+  revisionNumber: number
+}
