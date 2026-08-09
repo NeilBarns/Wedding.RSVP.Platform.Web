@@ -1,6 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { loginAsAdmin } from './helpers/auth'
-import { adminCredentials } from './helpers/env'
+import { adminStoragePath } from './helpers/testData'
 
 test('protected admin route redirects to the complete login form', async ({ page }) => {
   await page.goto('/admin')
@@ -11,9 +10,12 @@ test('protected admin route redirects to the complete login form', async ({ page
   await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible()
 })
 
-test('configured admin credentials open the authenticated shell', async ({ page }) => {
-  test.skip(!adminCredentials, 'Set PLAYWRIGHT_ADMIN_EMAIL and PLAYWRIGHT_ADMIN_PASSWORD for authenticated smoke coverage.')
-  await loginAsAdmin(page)
-  await expect(page.getByRole('navigation', { name: 'Admin navigation' }).first()).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Sign out' }).first()).toBeVisible()
+test.describe('authenticated admin', () => {
+  test.use({ storageState: adminStoragePath })
+  test('fixture owner opens the authenticated shell', async ({ page }) => {
+    await page.goto('/admin')
+    await expect(page.getByText('E2E Owner').first()).toBeVisible()
+    await expect(page.getByRole('navigation', { name: 'Admin navigation' }).first()).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Sign out' }).first()).toBeVisible()
+  })
 })

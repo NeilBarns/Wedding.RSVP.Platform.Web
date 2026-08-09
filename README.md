@@ -10,7 +10,13 @@ Install the Chromium browser once after installing dependencies:
 npx playwright install chromium
 ```
 
-Start the Laravel API locally, then run:
+Create the dedicated `wedding_rsvp_e2e` database in the API repository and copy its `.env.e2e.example` to `.env.e2e`. Start the API explicitly in E2E mode:
+
+```bash
+php artisan serve --env=e2e --host=127.0.0.1 --port=8000
+```
+
+Set the frontend Playwright environment, then run:
 
 ```bash
 npm run test:e2e
@@ -22,15 +28,15 @@ Playwright starts or reuses the Vite development server. Configuration is enviro
 
 ```dotenv
 PLAYWRIGHT_BASE_URL=http://localhost:5173
-PLAYWRIGHT_API_BASE_URL=http://localhost:8000
-PLAYWRIGHT_INVITATION_TOKEN=
-PLAYWRIGHT_ADMIN_EMAIL=
-PLAYWRIGHT_ADMIN_PASSWORD=
+PLAYWRIGHT_API_BASE_URL=http://127.0.0.1:8000
+PLAYWRIGHT_API_REPO_PATH=C:\path\to\Wedding.RSVP.Platform.API
 ```
 
-The base URLs must use localhost, a private-network address, or a `.test` hostname; production-like targets are rejected before tests run. Only use disposable or explicitly approved local/test data. Credentials and invitation tokens must remain in the environment and must not be committed.
+Every Playwright invocation runs the backend's guarded `php artisan --env=e2e e2e:reset --json` command once before tests. This recreates the disposable E2E database, validates that the running API serves the resulting E2E Wedding, and creates authenticated admin browser state through the real Sanctum login flow. Single-file runs also reset the E2E database.
 
-Public landing, invalid-invitation, unauthenticated admin, and mobile login coverage run without fixture credentials. Valid-invitation and authenticated CMS checks are skipped unless their environment values are supplied. RSVP submission/editing and CMS publication mutations are intentionally excluded until the API provides deterministic disposable fixture setup and reset.
+The base URLs must use localhost, a private-network address, or a `.test` hostname; production-like targets are rejected. `PLAYWRIGHT_API_REPO_PATH` must explicitly identify a repository containing `artisan`. The backend command independently requires `APP_ENV=e2e` and an `e2e`-named database, so the development database remains untouched.
+
+Runtime fixture credentials, raw invitation tokens, and authenticated cookies are written under `playwright/.auth/`, overwritten on each run, and ignored by Git. They are never placed in browser local storage or printed by setup.
 
 ## Vite reference
 
