@@ -1,0 +1,7 @@
+import type { KeyboardEvent } from 'react'
+import type { ContentSection } from '../types'
+const tabs: { id: ContentSection; label: string }[] = [{ id: 'hero', label: 'Hero' }, { id: 'story', label: 'Story' }, { id: 'events', label: 'Events' }, { id: 'faq', label: 'FAQ' }, { id: 'gallery', label: 'Gallery' }]
+export function ContentTabs({ active, onChange }: { active: ContentSection; onChange: (value: ContentSection) => void }) {
+  function keyDown(event: KeyboardEvent<HTMLButtonElement>) { const index=tabs.findIndex((tab)=>tab.id===active); const next=event.key==='ArrowRight'?(index+1)%tabs.length:event.key==='ArrowLeft'?(index-1+tabs.length)%tabs.length:null; if(next!==null){event.preventDefault();onChange(tabs[next].id);document.getElementById(`content-tab-${tabs[next].id}`)?.focus()} }
+  return <div className="overflow-x-auto"><div role="tablist" aria-label="Wedding content sections" className="flex min-w-max gap-1 border-b border-[var(--color-border)]">{tabs.map((tab)=><button id={`content-tab-${tab.id}`} key={tab.id} type="button" role="tab" aria-selected={active===tab.id} aria-controls="content-tabpanel" tabIndex={active===tab.id?0:-1} onKeyDown={keyDown} onClick={()=>onChange(tab.id)} className={`min-h-12 border-b-2 px-5 text-sm font-semibold ${active===tab.id?'border-[var(--color-primary)] text-[var(--color-primary)]':'border-transparent text-[var(--color-muted)]'}`}>{tab.label}</button>)}</div></div>
+}
