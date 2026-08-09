@@ -4,6 +4,7 @@ import { FullPageLoading } from '../../components/feedback/FullPageLoading'
 import { NotFoundState } from '../../components/feedback/NotFoundState'
 import { RsvpConfirmation } from '../../features/invitation/components/RsvpConfirmation'
 import { usePublicInvitation } from '../../features/invitation/usePublicInvitation'
+import { PublicWeddingShell } from '../../features/publicWedding/components/PublicWeddingShell'
 
 export default function ConfirmationPage() {
   const { token = '' } = useParams()
@@ -24,19 +25,27 @@ export default function ConfirmationPage() {
 
   if (!data.invitation.hasSubmitted) {
     return (
-      <ErrorState
-        title="No RSVP has been submitted yet"
-        message="Return to your invitation to respond for your household."
-        onRetry={() => navigate('..', { relative: 'path' })}
-      />
+      <PublicWeddingShell wedding={data.wedding}>
+        <div className="mx-auto max-w-3xl px-5 py-16 sm:px-8">
+          <ErrorState
+            title="No RSVP has been submitted yet"
+            message="Return to your invitation to respond for your household."
+            onRetry={() => navigate('..', { relative: 'path' })}
+          />
+        </div>
+      </PublicWeddingShell>
     )
   }
 
   return (
-    <RsvpConfirmation
-      invitation={data.invitation}
-      readOnly={!data.invitation.canRespond}
-      onEdit={data.invitation.canRespond ? () => navigate('..', { relative: 'path' }) : undefined}
-    />
+    <PublicWeddingShell wedding={data.wedding}>
+      <div className="mx-auto max-w-3xl px-5 py-16 sm:px-8">
+        <RsvpConfirmation
+          invitation={data.invitation}
+          readOnly={!data.invitation.canRespond}
+          onEdit={data.invitation.canRespond ? () => navigate('..', { relative: 'path' }) : undefined}
+        />
+      </div>
+    </PublicWeddingShell>
   )
 }

@@ -1,0 +1,7 @@
+import { CalendarDays, MapPin } from 'lucide-react'
+import { formatWeddingDate } from '../../../lib/utils/formatDate'
+import type { PublicWedding } from '../types'
+
+export function EventDetailsSection({ wedding }: { wedding: Pick<PublicWedding, 'weddingDate'> }) {
+  return <section id="details" className="scroll-mt-24 bg-[var(--color-surface)] px-5 py-20 sm:px-8 sm:py-28"><div className="mx-auto max-w-5xl"><div className="text-center"><p className="text-xs font-semibold uppercase tracking-[0.25em] text-[var(--color-muted)]">The celebration</p><h2 className="mt-3 font-[var(--font-display)] text-4xl sm:text-5xl">Wedding details</h2></div><div className="mt-12 grid gap-5 sm:grid-cols-2"><article className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] p-7"><CalendarDays className="size-6 text-[var(--color-accent)]" aria-hidden="true" /><h3 className="mt-5 font-[var(--font-display)] text-2xl">Save the date</h3><p className="mt-2 text-[var(--color-muted)]">{formatWeddingDate(wedding.weddingDate)}</p></article><article className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] p-7"><MapPin className="size-6 text-[var(--color-accent)]" aria-hidden="true" /><h3 className="mt-5 font-[var(--font-display)] text-2xl">Ceremony &amp; reception</h3><p className="mt-2 text-[var(--color-muted)]">Venue and timing details will be shared as they are finalized.</p></article></div></div></section>
+}

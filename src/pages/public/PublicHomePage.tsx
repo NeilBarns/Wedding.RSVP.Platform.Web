@@ -1,48 +1,40 @@
-import { Heart, Wifi } from 'lucide-react'
-import { ErrorState } from '../../components/feedback/ErrorState'
-import { FullPageLoading } from '../../components/feedback/FullPageLoading'
-import { useHealthCheck } from '../../features/health/useHealthCheck'
+import { CalendarHeart, RefreshCw } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { EventDetailsSection } from '../../features/publicWedding/components/EventDetailsSection'
+import { DressCodeSection } from '../../features/publicWedding/components/DressCodeSection'
+import { FaqPreviewSection } from '../../features/publicWedding/components/FaqPreviewSection'
+import { GalleryPreviewSection } from '../../features/publicWedding/components/GalleryPreviewSection'
+import { PublicWeddingShell } from '../../features/publicWedding/components/PublicWeddingShell'
+import { RsvpCallToAction } from '../../features/publicWedding/components/RsvpCallToAction'
+import { StorySection } from '../../features/publicWedding/components/StorySection'
+import { WeddingHero } from '../../features/publicWedding/components/WeddingHero'
+import { getPublicWedding } from '../../features/publicWedding/api'
+import type { PublicWedding } from '../../features/publicWedding/types'
+
+type PageState = 'loading' | 'ready' | 'unavailable'
+
+function WeddingPageSkeleton() {
+  return <main className="min-h-screen bg-[var(--color-background)] px-5 py-20" role="status"><div className="mx-auto max-w-5xl"><div className="mx-auto h-4 w-40 animate-pulse rounded bg-[var(--color-border)]" /><div className="mx-auto mt-8 h-24 max-w-2xl animate-pulse rounded-[var(--radius-lg)] bg-[var(--color-surface)]" /><div className="mx-auto mt-10 h-12 w-36 animate-pulse rounded-full bg-[var(--color-border)]" /></div><span className="sr-only">Preparing the wedding website...</span></main>
+}
 
 export default function PublicHomePage() {
-  const { state, retry } = useHealthCheck()
+  const [state, setState] = useState<PageState>('loading')
+  const [wedding, setWedding] = useState<PublicWedding | null>(null)
+  const [reload, setReload] = useState(0)
 
-  if (state === 'loading') {
-    return <FullPageLoading label="Preparing the wedding page…" />
-  }
+  useEffect(() => {
+    const controller = new AbortController()
+    getPublicWedding({ signal: controller.signal }).then((value) => {
+      if (controller.signal.aborted) return
+      if (value.status !== 'published') { setState('unavailable'); return }
+      setWedding(value)
+      setState('ready')
+    }).catch(() => { if (!controller.signal.aborted) setState('unavailable') })
+    return () => controller.abort()
+  }, [reload])
 
-  if (state === 'error') {
-    return (
-      <ErrorState
-        title="We’ll be right back"
-        message="The wedding page is temporarily unavailable. Please try again in a moment."
-        onRetry={() => void retry()}
-      />
-    )
-  }
+  if (state === 'loading') return <WeddingPageSkeleton />
+  if (state === 'unavailable' || !wedding) return <main className="flex min-h-screen items-center px-5 py-16"><section className="mx-auto max-w-xl rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center shadow-[var(--shadow-soft)]" role="alert"><CalendarHeart className="mx-auto size-8 text-[var(--color-accent)]" aria-hidden="true" /><h1 className="mt-5 font-[var(--font-display)] text-3xl">Wedding website unavailable</h1><p className="mt-3 text-[var(--color-muted)]">This wedding website isn't available right now. Please try again in a moment.</p><button type="button" onClick={() => { setState('loading'); setReload((value) => value + 1) }} className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--color-primary)] px-5 font-semibold text-white"><RefreshCw className="size-4" aria-hidden="true" />Try again</button></section></main>
 
-  return (
-    <section className="mx-auto max-w-3xl py-10 text-center" aria-labelledby="home-heading">
-      <Heart
-        className="mx-auto mb-5 size-8 text-[var(--color-accent)]"
-        strokeWidth={1.5}
-        aria-hidden="true"
-      />
-      <p className="mb-3 text-sm font-medium uppercase tracking-[0.2em] text-[var(--color-muted)]">
-        You are warmly invited
-      </p>
-      <h1
-        id="home-heading"
-        className="font-[var(--font-display)] text-4xl leading-tight text-[var(--color-primary)] sm:text-6xl"
-      >
-        Neil &amp; Hazel Wedding RSVP
-      </h1>
-      <div
-        className="mx-auto mt-8 flex max-w-lg items-center justify-center gap-2 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] px-5 py-4 text-[var(--color-muted)] shadow-[var(--shadow-soft)]"
-        role="status"
-      >
-        <Wifi className="size-5 text-[var(--color-success)]" aria-hidden="true" />
-        <p>Frontend and API foundation are connected.</p>
-      </div>
-    </section>
-  )
+  return <PublicWeddingShell wedding={wedding}><WeddingHero wedding={wedding} /><StorySection /><EventDetailsSection wedding={wedding} /><DressCodeSection dressCode={wedding.dressCode} /><GalleryPreviewSection /><FaqPreviewSection /><RsvpCallToAction /></PublicWeddingShell>
 }

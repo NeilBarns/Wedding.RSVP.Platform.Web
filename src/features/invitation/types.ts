@@ -10,25 +10,9 @@ export type InvitationGuest = {
   sortOrder: number
 }
 
-export type WeddingTheme = {
-  key: string
-  primaryColor: string
-  secondaryColor: string
-  accentColor: string
-  backgroundColor: string
-  headingFont: string
-  bodyFont: string
-}
+export type WeddingTheme = PublicWeddingTheme
 
-export type WeddingSummary = {
-  partnerOneName: string
-  partnerTwoName: string
-  weddingDate: string
-  rsvpDeadline: string | null
-  dressCode: string | null
-  status: string
-  theme: WeddingTheme
-}
+export type WeddingSummary = PublicWeddingDetails
 
 export type PublicInvitation = {
   id: number
@@ -71,3 +55,4 @@ export type RsvpConfirmationData = {
   invitation: PublicInvitation
   revisionNumber: number
 }
+import type { PublicWeddingDetails, PublicWeddingTheme } from '../publicWedding/types'
