@@ -1,4 +1,38 @@
-# React + TypeScript + Vite
+# Wedding RSVP frontend
+
+React, TypeScript, Vite, and Tailwind frontend for the public wedding experience and administration CMS.
+
+## Playwright smoke tests
+
+Install the Chromium browser once after installing dependencies:
+
+```bash
+npx playwright install chromium
+```
+
+Start the Laravel API locally, then run:
+
+```bash
+npm run test:e2e
+npm run test:e2e:headed
+npm run test:e2e:ui
+```
+
+Playwright starts or reuses the Vite development server. Configuration is environment-driven:
+
+```dotenv
+PLAYWRIGHT_BASE_URL=http://localhost:5173
+PLAYWRIGHT_API_BASE_URL=http://localhost:8000
+PLAYWRIGHT_INVITATION_TOKEN=
+PLAYWRIGHT_ADMIN_EMAIL=
+PLAYWRIGHT_ADMIN_PASSWORD=
+```
+
+The base URLs must use localhost, a private-network address, or a `.test` hostname; production-like targets are rejected before tests run. Only use disposable or explicitly approved local/test data. Credentials and invitation tokens must remain in the environment and must not be committed.
+
+Public landing, invalid-invitation, unauthenticated admin, and mobile login coverage run without fixture credentials. Valid-invitation and authenticated CMS checks are skipped unless their environment values are supplied. RSVP submission/editing and CMS publication mutations are intentionally excluded until the API provides deterministic disposable fixture setup and reset.
+
+## Vite reference
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
