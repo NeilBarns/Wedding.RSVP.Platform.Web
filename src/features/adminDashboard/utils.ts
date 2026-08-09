@@ -1,5 +1,5 @@
 import type { InvitationListItem } from '../adminInvitations/types'
-import type { AttentionItem, GuestMetrics } from './types'
+import type { AttentionItem, DashboardSummary, GuestMetrics } from './types'
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
   year: 'numeric',
@@ -52,22 +52,16 @@ export function isDeadlineApproaching(deadline: string | null, now = new Date())
   return difference >= 0 && difference <= 14
 }
 
-export function calculateGuestMetrics(invitations: InvitationListItem[]): GuestMetrics {
-  const totals = invitations.reduce(
-    (result, invitation) => ({
-      guests: result.guests + invitation.guestCount,
-      attending: result.attending + invitation.attendingCount,
-      declined: result.declined + invitation.declinedCount,
-      pending: result.pending + invitation.pendingCount,
-      submittedHouseholds: result.submittedHouseholds + (invitation.submittedAt ? 1 : 0),
-    }),
-    { guests: 0, attending: 0, declined: 0, pending: 0, submittedHouseholds: 0 },
-  )
-  const responded = totals.attending + totals.declined
+export function calculateGuestMetrics(summary: DashboardSummary): GuestMetrics {
+  const responded = summary.guests.attending + summary.guests.declined
   return {
-    ...totals,
+    guests: summary.guests.total,
+    attending: summary.guests.attending,
+    declined: summary.guests.declined,
+    pending: summary.guests.pending,
+    submittedHouseholds: summary.households.submitted,
     responded,
-    percentage: totals.guests === 0 ? null : Math.round((responded / totals.guests) * 100),
+    percentage: summary.guests.total === 0 ? null : Math.round((responded / summary.guests.total) * 100),
   }
 }
 
