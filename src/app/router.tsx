@@ -16,6 +16,9 @@ const AdminWeddingPage = lazy(() => import('../pages/admin/AdminWeddingPage'))
 const AdminInvitationsPage = lazy(
   () => import('../pages/admin/AdminInvitationsPage'),
 )
+const AdminInvitationDetailPage = lazy(
+  () => import('../pages/admin/AdminInvitationDetailPage'),
+)
 const NotFoundPage = lazy(() => import('../pages/NotFoundPage'))
 
 function withSuspense(page: ReactNode) {
@@ -57,6 +60,10 @@ export const router = createBrowserRouter([
               {
                 path: 'invitations',
                 element: withSuspense(<AdminInvitationsPage />),
+              },
+              {
+                path: 'invitations/:invitationId',
+                element: withSuspense(<AdminInvitationDetailPage />),
               },
             ],
           },
