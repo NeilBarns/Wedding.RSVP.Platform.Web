@@ -13,6 +13,14 @@ test('mobile public navigation and RSVP CTA remain reachable', async ({ page }) 
   await expect(page.getByRole('link', { name: 'RSVP', exact: true }).first()).toBeVisible()
 })
 
+test('mobile Modern Minimal preview remains responsive', async ({ page }) => {
+  await page.goto('/?templatePreview=modern-minimal-v1')
+  await expect(page.locator('[data-wedding-template="modern-minimal-v1"]')).toBeVisible()
+  await expectNoHorizontalOverflow(page)
+  await page.getByRole('button', { name: 'Open navigation' }).click()
+  await expect(page.getByRole('navigation', { name: 'Mobile wedding site navigation' })).toBeVisible()
+})
+
 test('mobile locked invitation remains readable and stable', async ({ page }) => {
   const invitation = await getLockedInvitation()
   await page.goto(`/invite/${invitation.token}`)

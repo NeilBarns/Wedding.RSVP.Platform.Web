@@ -41,3 +41,18 @@ test('an unknown API template key falls back safely to Editorial Linen', async (
   await expect(page.locator('[data-wedding-template="editorial-linen-v1"]')).toBeVisible()
   await expect(page.getByText('E2E Wedding Headline')).toBeVisible()
 })
+
+test('Modern Minimal landing preview renders the same published content', async ({ page }) => {
+  await page.goto('/?templatePreview=modern-minimal-v1')
+  await expect(page.locator('[data-wedding-template="modern-minimal-v1"]')).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1)
+  await expect(page.getByText('E2E Wedding Headline')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'E2E Ceremony' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'E2E Published Question?' })).toHaveAttribute('aria-expanded', 'false')
+})
+
+test('unknown template preview is ignored safely', async ({ page }) => {
+  await page.goto('/?templatePreview=not-registered')
+  await expect(page.locator('[data-wedding-template="editorial-linen-v1"]')).toBeVisible()
+  await expect(page.locator('[data-wedding-template="modern-minimal-v1"]')).toHaveCount(0)
+})

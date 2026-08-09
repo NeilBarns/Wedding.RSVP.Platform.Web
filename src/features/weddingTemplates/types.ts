@@ -6,7 +6,7 @@ import type {
 } from '../invitation/types'
 import type { PublicWedding } from '../publicWedding/types'
 
-export const weddingTemplateKeys = ['editorial-linen-v1'] as const
+export const weddingTemplateKeys = ['editorial-linen-v1', 'modern-minimal-v1'] as const
 
 export type WeddingTemplateKey = (typeof weddingTemplateKeys)[number]
 

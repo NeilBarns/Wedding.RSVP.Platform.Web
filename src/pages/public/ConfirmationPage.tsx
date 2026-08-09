@@ -1,13 +1,14 @@
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ErrorState } from '../../components/feedback/ErrorState'
 import { FullPageLoading } from '../../components/feedback/FullPageLoading'
 import { NotFoundState } from '../../components/feedback/NotFoundState'
 import { usePublicInvitation } from '../../features/invitation/usePublicInvitation'
-import { resolveWeddingTemplate } from '../../features/weddingTemplates/resolveTemplate'
+import { resolveWeddingTemplate, templatePreviewFromSearch } from '../../features/weddingTemplates/resolveTemplate'
 
 export default function ConfirmationPage() {
   const { token = '' } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const { status, data, retry } = usePublicInvitation(token)
 
   if (status === 'loading') {
@@ -22,6 +23,6 @@ export default function ConfirmationPage() {
     return <ErrorState title="We couldn’t load your RSVP" message="Please check your connection and try again." onRetry={() => void retry()} />
   }
 
-  const TemplateConfirmationPage = resolveWeddingTemplate(data.wedding.templateKey).ConfirmationPage
-  return <TemplateConfirmationPage data={data} onEdit={() => navigate('..', { relative: 'path' })} />
+  const TemplateConfirmationPage = resolveWeddingTemplate(data.wedding.templateKey, templatePreviewFromSearch(location.search)).ConfirmationPage
+  return <TemplateConfirmationPage data={data} onEdit={() => navigate({ pathname: '..', search: location.search }, { relative: 'path' })} />
 }

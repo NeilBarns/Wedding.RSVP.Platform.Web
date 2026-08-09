@@ -1,8 +1,9 @@
 import { CalendarHeart, RefreshCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { getPublicWedding } from '../../features/publicWedding/api'
 import type { PublicWedding } from '../../features/publicWedding/types'
-import { resolveWeddingTemplate } from '../../features/weddingTemplates/resolveTemplate'
+import { resolveWeddingTemplate, templatePreviewFromSearch } from '../../features/weddingTemplates/resolveTemplate'
 
 type PageState = 'loading' | 'ready' | 'unavailable'
 
@@ -11,6 +12,7 @@ function WeddingPageSkeleton() {
 }
 
 export default function PublicHomePage() {
+  const location = useLocation()
   const [state, setState] = useState<PageState>('loading')
   const [wedding, setWedding] = useState<PublicWedding | null>(null)
   const [reload, setReload] = useState(0)
@@ -29,6 +31,6 @@ export default function PublicHomePage() {
   if (state === 'loading') return <WeddingPageSkeleton />
   if (state === 'unavailable' || !wedding) return <main className="flex min-h-screen items-center px-5 py-16"><section className="mx-auto max-w-xl rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center shadow-[var(--shadow-soft)]" role="alert"><CalendarHeart className="mx-auto size-8 text-[var(--color-accent)]" aria-hidden="true" /><h1 className="mt-5 font-[var(--font-display)] text-3xl">Wedding website unavailable</h1><p className="mt-3 text-[var(--color-muted)]">This wedding website isn't available right now. Please try again in a moment.</p><button type="button" onClick={() => { setState('loading'); setReload((value) => value + 1) }} className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--color-primary)] px-5 font-semibold text-white"><RefreshCw className="size-4" aria-hidden="true" />Try again</button></section></main>
 
-  const TemplateLandingPage = resolveWeddingTemplate(wedding.templateKey).LandingPage
+  const TemplateLandingPage = resolveWeddingTemplate(wedding.templateKey, templatePreviewFromSearch(location.search)).LandingPage
   return <TemplateLandingPage wedding={wedding} />
 }
