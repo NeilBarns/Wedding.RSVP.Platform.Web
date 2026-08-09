@@ -1,5 +1,6 @@
 import {
   CalendarDays,
+  BookOpen,
   LayoutDashboard,
   LogOut,
   Mail,
@@ -12,7 +13,8 @@ import type { AuthenticatedUser } from '../../features/auth/types'
 
 const navigation = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/admin/wedding', label: 'Wedding', icon: CalendarDays },
+  { to: '/admin/wedding', label: 'Wedding Settings', icon: CalendarDays },
+  { to: '/admin/content', label: 'Wedding Content', icon: BookOpen },
   { to: '/admin/invitations', label: 'Invitations', icon: Mail },
 ]
 
