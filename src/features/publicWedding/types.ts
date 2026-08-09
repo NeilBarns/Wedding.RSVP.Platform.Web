@@ -15,6 +15,7 @@ export type PublicWeddingDetails = {
   rsvpDeadline: string | null
   dressCode: string | null
   status: 'draft' | 'published' | 'archived'
+  templateKey: string | null
   theme: PublicWeddingTheme
 }
 

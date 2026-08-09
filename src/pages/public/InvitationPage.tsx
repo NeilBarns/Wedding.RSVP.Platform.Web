@@ -2,9 +2,8 @@ import { useParams } from 'react-router-dom'
 import { ErrorState } from '../../components/feedback/ErrorState'
 import { FullPageLoading } from '../../components/feedback/FullPageLoading'
 import { NotFoundState } from '../../components/feedback/NotFoundState'
-import { RsvpExperience } from '../../features/invitation/components/RsvpExperience'
 import { usePublicInvitation } from '../../features/invitation/usePublicInvitation'
-import { PublicWeddingShell } from '../../features/publicWedding/components/PublicWeddingShell'
+import { resolveWeddingTemplate } from '../../features/weddingTemplates/resolveTemplate'
 
 export default function InvitationPage() {
   const { token = '' } = useParams()
@@ -33,11 +32,6 @@ export default function InvitationPage() {
     )
   }
 
-  return (
-    <PublicWeddingShell wedding={data.wedding}>
-      <div className="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8 sm:py-18">
-        <RsvpExperience key={data.invitation.id} token={token} initialData={data} />
-      </div>
-    </PublicWeddingShell>
-  )
+  const TemplateInvitationPage = resolveWeddingTemplate(data.wedding.templateKey).InvitationPage
+  return <TemplateInvitationPage token={token} data={data} />
 }
