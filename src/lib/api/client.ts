@@ -11,6 +11,20 @@ type ErrorPayload = {
   errors?: unknown
 }
 
+function readCookie(name: string): string | undefined {
+  if (typeof document === 'undefined') {
+    return undefined
+  }
+
+  const prefix = `${name}=`
+  const cookie = document.cookie
+    .split(';')
+    .map((value) => value.trim())
+    .find((value) => value.startsWith(prefix))
+
+  return cookie ? decodeURIComponent(cookie.slice(prefix.length)) : undefined
+}
+
 function isJsonBody(body: RequestBody): body is Record<string, unknown> | unknown[] {
   return (
     body !== null &&
@@ -59,6 +73,12 @@ async function request<T>(
 ): Promise<T> {
   const headers = new Headers(options.headers)
   headers.set('Accept', 'application/json')
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(method.toUpperCase()) && !headers.has('X-XSRF-TOKEN')) {
+    const csrfToken = readCookie('XSRF-TOKEN')
+    if (csrfToken) {
+      headers.set('X-XSRF-TOKEN', csrfToken)
+    }
+  }
 
   let body = options.body as BodyInit | null | undefined
   if (isJsonBody(options.body ?? null)) {

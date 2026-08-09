@@ -1,6 +1,13 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react'
+import { ApiError } from '../../lib/api'
 import { AuthContext } from './AuthContext'
-import { getCurrentUser } from './api'
+import { getCurrentUser, logoutSession } from './api'
 import type { AuthStatus, AuthenticatedUser } from './types'
 
 type AuthProviderProps = {
@@ -8,20 +15,42 @@ type AuthProviderProps = {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [status, setStatus] = useState<AuthStatus>('loading')
+  const [status, setStatus] = useState<AuthStatus>('initializing')
   const [user, setUser] = useState<AuthenticatedUser | null>(null)
 
-  const refresh = useCallback(async () => {
-    setStatus('loading')
+  const refreshAuth = useCallback(async (showLoading = true) => {
+    if (showLoading) {
+      setStatus('initializing')
+    }
 
     try {
       const currentUser = await getCurrentUser()
       setUser(currentUser)
       setStatus('authenticated')
-    } catch {
+      return currentUser
+    } catch (error) {
       setUser(null)
-      setStatus('unauthenticated')
+      if (error instanceof ApiError && error.status === 401) {
+        setStatus('unauthenticated')
+        return null
+      }
+
+      setStatus('error')
+      throw error
     }
+  }, [])
+
+  const logout = useCallback(async () => {
+    try {
+      await logoutSession()
+    } catch (error) {
+      if (!(error instanceof ApiError) || error.status !== 401) {
+        throw error
+      }
+    }
+
+    setUser(null)
+    setStatus('unauthenticated')
   }, [])
 
   useEffect(() => {
@@ -32,13 +61,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const currentUser = await getCurrentUser({ signal: controller.signal })
         setUser(currentUser)
         setStatus('authenticated')
-      } catch {
+      } catch (error) {
         if (controller.signal.aborted) {
           return
         }
 
         setUser(null)
-        setStatus('unauthenticated')
+        setStatus(
+          error instanceof ApiError && error.status === 401
+            ? 'unauthenticated'
+            : 'error',
+        )
       }
     }
 
@@ -46,8 +79,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return () => controller.abort()
   }, [])
 
+  const value = useMemo(
+    () => ({ status, user, refreshAuth, logout }),
+    [status, user, refreshAuth, logout],
+  )
+
   return (
-    <AuthContext.Provider value={{ status, user, refresh }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   )
