@@ -37,32 +37,54 @@ export default async function globalSetup() {
   if (process.platform !== 'win32') await chmod(fixturePath, 0o600)
 
   const browser = await chromium.launch()
+  const context = await browser.newContext()
+  const page = await context.newPage()
   let authenticationStage = 'opening the login page'
+  let loginFormLoaded = false
+  let reachedAdmin = false
+  let loginStatus: number | null = null
+  let authVerificationStatus: number | null = null
   try {
-    const context = await browser.newContext()
-    const page = await context.newPage()
     await page.goto(`${frontendUrl}/admin/login`)
+    await page.getByRole('heading', { name: 'Admin login' }).waitFor()
+    loginFormLoaded = true
     authenticationStage = 'submitting the login request'
     await page.getByLabel('Email').fill(fixture.admin.email)
     await page.getByLabel('Password').fill(fixture.admin.password)
-    const loginResponsePromise = page.waitForResponse((response) => response.url().endsWith('/api/auth/login'))
-    const meResponsePromise = page.waitForResponse((response) => response.url().endsWith('/api/auth/me') && response.request().method() === 'GET')
-    await page.getByRole('button', { name: 'Sign in' }).click()
-    const loginResponse = await loginResponsePromise
-    if (!loginResponse.ok()) authenticationStage = `receiving login HTTP ${loginResponse.status()}`
+    const [loginResponse] = await Promise.all([
+      page.waitForResponse((response) => response.url().endsWith('/api/auth/login') && response.request().method() === 'POST'),
+      page.getByRole('button', { name: 'Sign in' }).click(),
+    ])
+    loginStatus = loginResponse.status()
+    if (!loginResponse.ok()) authenticationStage = `receiving login HTTP ${loginStatus}`
     if (!loginResponse.ok()) throw new Error('login failed')
     authenticationStage = 'waiting for the authenticated redirect'
-    const meResponse = await meResponsePromise
-    if (!meResponse.ok()) {
-      authenticationStage = `verifying the session with HTTP ${meResponse.status()}`
+    await page.waitForURL(/\/admin(?:\?.*)?$/, { timeout: 15_000 })
+    reachedAdmin = true
+    await page.getByText('E2E Owner').first().waitFor()
+
+    authenticationStage = 'verifying the authenticated session'
+    const authVerification = await context.request.get(`${apiUrl}/api/auth/me`, {
+      headers: {
+        Accept: 'application/json',
+        Origin: frontendUrl,
+        Referer: `${frontendUrl}/admin`,
+      },
+    })
+    authVerificationStatus = authVerification.status()
+    if (!authVerification.ok()) {
+      authenticationStage = `verifying the session with HTTP ${authVerificationStatus}`
       throw new Error('auth verification failed')
     }
-    await page.waitForURL(/\/admin(?:\?.*)?$/, { timeout: 15_000 })
     authenticationStage = 'saving the authenticated browser state'
     await context.storageState({ path: adminStoragePath })
   } catch {
-    throw new Error(`E2E admin authentication failed while ${authenticationStage}. Verify the frontend and E2E API origins and Sanctum configuration; credentials and cookies were not logged.`)
-  } finally { await browser.close() }
+    const currentUrl = page.isClosed() ? 'page closed' : page.url()
+    throw new Error(`E2E admin authentication failed while ${authenticationStage}. URL: ${currentUrl}; login form loaded: ${loginFormLoaded}; reached /admin: ${reachedAdmin}; login HTTP: ${loginStatus ?? 'not received'}; auth verification HTTP: ${authVerificationStatus ?? 'not requested'}. Verify the frontend and E2E API origins and Sanctum configuration; credentials and cookies were not logged.`)
+  } finally {
+    await context.close()
+    await browser.close()
+  }
 }
 
 function isExpectedWedding(value: unknown) {

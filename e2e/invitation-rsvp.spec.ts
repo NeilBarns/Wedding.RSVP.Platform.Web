@@ -17,6 +17,7 @@ test.describe.serial('fresh household journey', () => {
     const invitation = await getFreshInvitation()
     const assertNoPageErrors = monitorPageErrors(page)
     await page.goto(`/invite/${invitation.token}`)
+    await expect(page.locator('[data-wedding-template="editorial-linen-v1"]')).toBeVisible()
     await expect(page.getByRole('heading', { name: 'E2E Fresh Household' })).toBeVisible()
     await expect(page.getByText('E2E Guest One')).toBeVisible()
     await expect(page.getByText('E2E Guest Two')).toBeVisible()
@@ -44,6 +45,7 @@ test.describe.serial('fresh household journey', () => {
     await expect(page.getByRole('heading', { name: 'Review your RSVP' })).toBeVisible()
     await page.getByRole('button', { name: 'Confirm RSVP' }).dispatchEvent('click')
     await expect(page.getByRole('heading', { name: 'Your RSVP has been received' })).toBeVisible()
+    await expect(page.locator('[data-wedding-template="editorial-linen-v1"]')).toBeVisible()
     await expect(page.getByText('E2E fresh RSVP message.')).toBeVisible()
     await page.reload()
     await expect(page.getByRole('button', { name: 'Edit RSVP' })).toBeVisible()
@@ -73,6 +75,13 @@ test('submitted household can edit and persist its response', async ({ page }) =
   await continueStep(page)
   await expect(page.getByLabel('Message to Neil & Hazel')).toHaveValue(updatedMessage)
   assertNoPageErrors()
+})
+
+test('submitted household confirmation route uses Editorial Linen', async ({ page }) => {
+  const invitation = await getSubmittedInvitation()
+  await page.goto(`/invite/${invitation.token}/confirmation`)
+  await expect(page.locator('[data-wedding-template="editorial-linen-v1"]')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Your RSVP has been received' })).toBeVisible()
 })
 
 test('locked household is viewable but cannot be edited', async ({ page }) => {

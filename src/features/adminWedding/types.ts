@@ -18,7 +18,10 @@ export type AdminWeddingSettings = {
   rsvpDeadline: string | null
   dressCode: string | null
   status: WeddingStatus
+  templateKey: string | null
   theme: WeddingThemeSettings
 }
 
-export type WeddingUpdateRequest = Omit<AdminWeddingSettings, 'id'>
+// Template selection is intentionally not editable until the admin picker exists.
+// Omitting templateKey preserves the current value through the API's legacy-PUT behavior.
+export type WeddingUpdateRequest = Omit<AdminWeddingSettings, 'id' | 'templateKey'>

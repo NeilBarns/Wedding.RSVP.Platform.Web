@@ -11,6 +11,7 @@ import {
 import { ActionButton } from '../../../components/ui/ActionButton'
 import { NotFoundState } from '../../../components/feedback/NotFoundState'
 import { ApiError } from '../../../lib/api'
+import type { RsvpPresentation } from '../../weddingTemplates/types'
 import { getPublicInvitation, submitPublicRsvp } from '../api'
 import {
   createRsvpSchema,
@@ -24,14 +25,13 @@ import { AttendanceStatusBadge } from './AttendanceStatusBadge'
 import { GuestAttendanceCard } from './GuestAttendanceCard'
 import { GuestDetailsFields } from './GuestDetailsFields'
 import { HouseholdDetailsForm } from './HouseholdDetailsForm'
-import { InvitationOverview } from './InvitationOverview'
-import { RsvpConfirmation } from './RsvpConfirmation'
 import { RsvpReview } from './RsvpReview'
 import { RsvpStepper } from './RsvpStepper'
 
 type RsvpExperienceProps = {
   token: string
   initialData: PublicInvitationData
+  presentation: RsvpPresentation
 }
 
 function applyBackendErrors(
@@ -66,7 +66,7 @@ function applyBackendErrors(
   }
 }
 
-export function RsvpExperience({ token, initialData }: RsvpExperienceProps) {
+export function RsvpExperience({ token, initialData, presentation }: RsvpExperienceProps) {
   const reduceMotion = useReducedMotion()
   const [data, setData] = useState(initialData)
   const [step, setStep] = useState(0)
@@ -203,6 +203,7 @@ export function RsvpExperience({ token, initialData }: RsvpExperienceProps) {
 
   const invitation = data.invitation
   const readOnly = !invitation.canRespond
+  const { Shell, Overview, Confirmation } = presentation
 
   if (invitationMissing) {
     return (
@@ -214,17 +215,17 @@ export function RsvpExperience({ token, initialData }: RsvpExperienceProps) {
   }
 
   return (
-    <article id="rsvp" className="mx-auto max-w-3xl scroll-mt-24">
-      <InvitationOverview invitation={invitation} wedding={data.wedding} />
+    <Shell>
+      <Overview invitation={invitation} wedding={data.wedding} />
 
       {readOnly ? (
-        <RsvpConfirmation
+        <Confirmation
           invitation={invitation}
           readOnly
           notice={submitMessage ?? (invitation.isLocked ? 'This invitation has been locked. Your current response remains available below.' : 'RSVP responses are now closed for this invitation. Your current response remains available below.')}
         />
       ) : confirmed ? (
-        <RsvpConfirmation
+        <Confirmation
           invitation={invitation}
           onEdit={() => {
             setConfirmed(false)
@@ -335,6 +336,6 @@ export function RsvpExperience({ token, initialData }: RsvpExperienceProps) {
           </div>
         </form>
       )}
-    </article>
+    </Shell>
   )
 }

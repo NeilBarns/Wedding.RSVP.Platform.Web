@@ -4,6 +4,7 @@ import { monitorPageErrors } from './helpers/pageErrors'
 test('published wedding landing page renders its primary guest journey', async ({ page }) => {
   const assertNoPageErrors = monitorPageErrors(page)
   await page.goto('/')
+  await expect(page.locator('[data-wedding-template="editorial-linen-v1"]')).toBeVisible()
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1)
   await expect(page.getByText('E2E Wedding Headline')).toBeVisible()
   await expect(page.getByRole('link', { name: 'RSVP', exact: true }).first()).toBeVisible()
@@ -26,4 +27,17 @@ test('published fixture FAQ can be expanded and collapsed', async ({ page }) => 
   await expect(page.getByText('E2E published FAQ answer.')).toBeVisible()
   await disclosure.click()
   await expect(disclosure).toHaveAttribute('aria-expanded', 'false')
+})
+
+test('an unknown API template key falls back safely to Editorial Linen', async ({ page }) => {
+  await page.route('**/api/wedding', async (route) => {
+    const response = await route.fetch()
+    const payload = await response.json()
+    payload.data.templateKey = 'future-template-not-supported'
+    await route.fulfill({ response, json: payload })
+  })
+
+  await page.goto('/')
+  await expect(page.locator('[data-wedding-template="editorial-linen-v1"]')).toBeVisible()
+  await expect(page.getByText('E2E Wedding Headline')).toBeVisible()
 })
