@@ -214,7 +214,7 @@ export function RsvpExperience({ token, initialData }: RsvpExperienceProps) {
   }
 
   return (
-    <article className="mx-auto max-w-3xl">
+    <article id="rsvp" className="mx-auto max-w-3xl scroll-mt-24">
       <InvitationOverview invitation={invitation} wedding={data.wedding} />
 
       {readOnly ? (

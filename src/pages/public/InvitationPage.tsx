@@ -4,6 +4,7 @@ import { FullPageLoading } from '../../components/feedback/FullPageLoading'
 import { NotFoundState } from '../../components/feedback/NotFoundState'
 import { RsvpExperience } from '../../features/invitation/components/RsvpExperience'
 import { usePublicInvitation } from '../../features/invitation/usePublicInvitation'
+import { PublicWeddingShell } from '../../features/publicWedding/components/PublicWeddingShell'
 
 export default function InvitationPage() {
   const { token = '' } = useParams()
@@ -32,5 +33,11 @@ export default function InvitationPage() {
     )
   }
 
-  return <RsvpExperience key={data.invitation.id} token={token} initialData={data} />
+  return (
+    <PublicWeddingShell wedding={data.wedding}>
+      <div className="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8 sm:py-18">
+        <RsvpExperience key={data.invitation.id} token={token} initialData={data} />
+      </div>
+    </PublicWeddingShell>
+  )
 }
