@@ -1,5 +1,7 @@
 import { z } from 'zod'
 import type { AdminWeddingSettings, WeddingUpdateRequest } from './types'
+import { fallbackWeddingTemplateKey } from '../weddingTemplates/resolveTemplate'
+import { weddingTemplateKeys, type WeddingTemplateKey } from '../weddingTemplates/types'
 
 const validDate = (value: string) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
@@ -18,6 +20,7 @@ export const weddingSettingsSchema = z.object({
   rsvpDeadline: z.string().refine((value) => value === '' || validDate(value), 'Please choose a valid RSVP deadline.'),
   dressCode: optionalText(100, 'Dress code must be 100 characters or fewer.'),
   status: z.enum(['draft', 'published', 'archived']),
+  templateKey: z.string().refine((value) => weddingTemplateKeys.includes(value as WeddingTemplateKey), 'Select a supported wedding template.'),
   theme: z.object({
     key: optionalText(100, 'Theme key must be 100 characters or fewer.'),
     primaryColor: color,
@@ -46,6 +49,7 @@ export function weddingToFormValues(wedding: AdminWeddingSettings): WeddingSetti
     rsvpDeadline: wedding.rsvpDeadline ?? '',
     dressCode: wedding.dressCode ?? '',
     status: wedding.status,
+    templateKey: wedding.templateKey ?? fallbackWeddingTemplateKey,
     theme: {
       key: wedding.theme.key ?? '',
       primaryColor: wedding.theme.primaryColor ?? '',
@@ -66,6 +70,7 @@ export function weddingPayload(values: WeddingSettingsFormValues): WeddingUpdate
     rsvpDeadline: nullable(values.rsvpDeadline),
     dressCode: nullable(values.dressCode),
     status: values.status,
+    templateKey: values.templateKey as WeddingTemplateKey,
     theme: {
       key: nullable(values.theme.key),
       primaryColor: upperColor(values.theme.primaryColor),

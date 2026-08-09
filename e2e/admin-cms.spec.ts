@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { adminStoragePath } from './helpers/testData'
+import { adminStoragePath, getSubmittedInvitation } from './helpers/testData'
 
 test.use({ storageState: adminStoragePath })
 
@@ -42,6 +42,47 @@ test('wedding settings exposes core fields without mutation', async ({ page }) =
   await expect(page.getByLabel(/Partner two/i)).toBeVisible()
   await expect(page.getByLabel(/Wedding date/i)).toBeVisible()
   await expect(page.getByRole('button', { name: /Save/i })).toBeVisible()
+})
+
+test('template gallery previews and persists a template without changing its theme', async ({ page }) => {
+  const invitation = await getSubmittedInvitation()
+  await page.goto('/admin/wedding')
+
+  const editorial = page.getByRole('group', { name: 'Editorial Linen template' })
+  const modern = page.getByRole('group', { name: 'Modern Minimal template' })
+  await expect(editorial.getByText('Current template')).toBeVisible()
+  const primaryColor = await page.getByLabel('Primary color').inputValue()
+  const headingFont = await page.getByLabel('Heading font').inputValue()
+
+  await modern.getByRole('button', { name: 'Preview Modern Minimal' }).click()
+  const preview = page.getByRole('dialog', { name: 'Modern Minimal' })
+  await expect(preview.locator('[data-wedding-template="modern-minimal-v1"]')).toBeVisible()
+  await preview.getByRole('button', { name: 'Close preview' }).click()
+
+  await modern.getByText('Select Modern Minimal', { exact: true }).click()
+  await expect(modern.getByRole('radio')).toBeChecked()
+  await expect(editorial.getByText('Current template')).toBeVisible()
+  await page.getByRole('button', { name: 'Save changes' }).click()
+  const confirmation = page.getByRole('dialog', { name: 'Change wedding template?' })
+  await expect(confirmation).toContainText('content, RSVP responses, colors, and fonts will remain unchanged')
+  await confirmation.getByRole('button', { name: 'Apply template' }).click()
+  await expect(page.getByText('Wedding template and settings saved.')).toBeVisible()
+  await expect(modern.getByText('Current template')).toBeVisible()
+  await expect(page.getByLabel('Primary color')).toHaveValue(primaryColor)
+  await expect(page.getByLabel('Heading font')).toHaveValue(headingFont)
+
+  const publicPage = await page.context().newPage()
+  await publicPage.goto('/')
+  await expect(publicPage.locator('[data-wedding-template="modern-minimal-v1"]')).toBeVisible()
+  await publicPage.goto(`/invite/${invitation.token}`)
+  await expect(publicPage.locator('[data-wedding-template="modern-minimal-v1"]')).toBeVisible()
+  await publicPage.close()
+
+  await editorial.getByText('Select Editorial Linen', { exact: true }).click()
+  await page.getByRole('button', { name: 'Save changes' }).click()
+  await page.getByRole('dialog', { name: 'Change wedding template?' }).getByRole('button', { name: 'Apply template' }).click()
+  await expect(page.getByText('Wedding template and settings saved.')).toBeVisible()
+  await expect(editorial.getByText('Current template')).toBeVisible()
 })
 
 test('wedding content tabs switch panels', async ({ page }) => {

@@ -1,0 +1,9 @@
+import type { WeddingTemplateKey } from '../../weddingTemplates/types'
+
+export function TemplateThumbnail({ templateKey }: { templateKey: WeddingTemplateKey }) {
+  if (templateKey === 'editorial-linen-v1') {
+    return <div className="aspect-[16/10] overflow-hidden rounded-[var(--radius-md)] bg-[#f4efe7] p-4" aria-hidden="true"><div className="mx-auto h-full max-w-[15rem] border border-[#d8cbbc] bg-[#fffdf9] p-3 shadow-sm"><div className="mx-auto h-1 w-12 rounded-full bg-[#9a8068]" /><div className="mx-auto mt-5 h-2 w-28 rounded-full bg-[#4a4038]" /><div className="mx-auto mt-2 h-2 w-20 rounded-full bg-[#4a4038]" /><div className="mx-auto mt-3 h-1 w-16 rounded-full bg-[#c4aa8e]" /><div className="mt-6 grid grid-cols-2 gap-2"><div className="h-14 rounded-sm bg-[#ded3c5]" /><div className="space-y-2 pt-1"><div className="h-1 rounded-full bg-[#aa9988]" /><div className="h-1 rounded-full bg-[#d2c5b7]" /><div className="h-1 w-3/4 rounded-full bg-[#d2c5b7]" /></div></div></div></div>
+  }
+
+  return <div className="aspect-[16/10] overflow-hidden rounded-[var(--radius-md)] bg-[#f2f2ef] p-4" aria-hidden="true"><div className="h-full border border-[#292925] bg-white p-3"><div className="flex items-center justify-between border-b border-[#292925] pb-2"><div className="h-1.5 w-20 bg-[#292925]" /><div className="flex gap-1"><div className="size-1.5 bg-[#292925]" /><div className="size-1.5 bg-[#292925]" /><div className="size-1.5 bg-[#292925]" /></div></div><div className="mt-3 grid h-[calc(100%-1.25rem)] grid-cols-[1.2fr_0.8fr] gap-2"><div className="flex flex-col justify-between"><div><div className="h-2 w-3/4 bg-[#292925]" /><div className="mt-1 h-2 w-1/2 bg-[#292925]" /></div><div className="grid grid-cols-2 gap-1 border-t border-[#292925] pt-2"><div className="h-1 bg-[#aaa]" /><div className="h-1 bg-[#aaa]" /></div></div><div className="bg-[#b9afa3]" /></div></div></div>
+}
