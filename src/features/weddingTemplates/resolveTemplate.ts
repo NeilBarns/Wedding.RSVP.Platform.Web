@@ -3,10 +3,12 @@ import type { WeddingTemplateDefinition, WeddingTemplateKey } from './types'
 
 export const fallbackWeddingTemplateKey: WeddingTemplateKey = 'editorial-linen-v1'
 
+export function isWeddingTemplateKey(templateKey: string | null | undefined): templateKey is WeddingTemplateKey {
+  return Boolean(templateKey && templateKey in weddingTemplateRegistry)
+}
+
 function registeredTemplate(templateKey: string | null | undefined) {
-  return templateKey && templateKey in weddingTemplateRegistry
-    ? weddingTemplateRegistry[templateKey as WeddingTemplateKey]
-    : null
+  return isWeddingTemplateKey(templateKey) ? weddingTemplateRegistry[templateKey] : null
 }
 
 export function resolveWeddingTemplate(templateKey: string | null | undefined, previewKey?: string | null): WeddingTemplateDefinition {

@@ -1,3 +1,5 @@
+import type { WeddingTemplateKey } from '../weddingTemplates/types'
+
 export type WeddingStatus = 'draft' | 'published' | 'archived'
 
 export type WeddingThemeSettings = {
@@ -22,6 +24,6 @@ export type AdminWeddingSettings = {
   theme: WeddingThemeSettings
 }
 
-// Template selection is intentionally not editable until the admin picker exists.
-// Omitting templateKey preserves the current value through the API's legacy-PUT behavior.
-export type WeddingUpdateRequest = Omit<AdminWeddingSettings, 'id' | 'templateKey'>
+export type WeddingUpdateRequest = Omit<AdminWeddingSettings, 'id' | 'templateKey'> & {
+  templateKey: WeddingTemplateKey
+}

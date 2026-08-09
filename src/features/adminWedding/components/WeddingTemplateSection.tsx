@@ -1,0 +1,23 @@
+import { Check, Eye, LayoutTemplate, TriangleAlert } from 'lucide-react'
+import { useState } from 'react'
+import type { UseFormReturn } from 'react-hook-form'
+import { isWeddingTemplateKey } from '../../weddingTemplates/resolveTemplate'
+import { weddingTemplateMetadata } from '../../weddingTemplates/metadata'
+import { weddingTemplateKeys, type WeddingTemplateKey } from '../../weddingTemplates/types'
+import type { AdminWeddingSettings } from '../types'
+import type { WeddingSettingsFormValues } from '../validation'
+import { TemplatePreviewDialog } from './TemplatePreviewDialog'
+import { TemplateThumbnail } from './TemplateThumbnail'
+
+type Props = {
+  form: UseFormReturn<WeddingSettingsFormValues>
+  wedding: AdminWeddingSettings
+}
+
+export function WeddingTemplateSection({ form, wedding }: Props) {
+  const selected = form.watch('templateKey')
+  const [preview, setPreview] = useState<WeddingTemplateKey | null>(null)
+  const currentSupported = isWeddingTemplateKey(wedding.templateKey)
+
+  return <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 sm:p-7"><h2 className="flex items-center gap-2 font-[var(--font-display)] text-2xl"><LayoutTemplate className="size-5" aria-hidden="true" />Wedding template</h2><p className="mt-1 text-sm text-[var(--color-muted)]">Templates control the guest-facing layout and presentation across the website, invitations, RSVP, and confirmation.</p>{wedding.templateKey && !currentSupported ? <div className="mt-5 flex gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-background)] p-4 text-sm" role="alert"><TriangleAlert className="size-5 shrink-0 text-[var(--color-accent)]" aria-hidden="true" /><p>This wedding uses a template that is not supported by this version of the CMS. Select a supported template before saving.</p></div> : null}<fieldset className="mt-6"><legend className="sr-only">Select wedding template</legend><div className="grid gap-5 lg:grid-cols-2">{weddingTemplateKeys.map((templateKey) => { const metadata = weddingTemplateMetadata[templateKey]; const isCurrent = wedding.templateKey === templateKey || (!wedding.templateKey && templateKey === 'editorial-linen-v1'); const isSelected = selected === templateKey; return <div key={templateKey} role="group" aria-label={`${metadata.name} template`} className={`rounded-[var(--radius-lg)] border-2 p-4 transition ${isSelected ? 'border-[var(--color-primary)] shadow-[var(--shadow-soft)]' : 'border-[var(--color-border)]'}`}><input id={`wedding-template-${templateKey}`} type="radio" value={templateKey} className="sr-only" {...form.register('templateKey')} /><TemplateThumbnail templateKey={templateKey} /><div className="mt-5 flex items-start justify-between gap-4"><div><h3 className="font-[var(--font-display)] text-2xl">{metadata.name}</h3><p className="mt-2 text-sm leading-6 text-[var(--color-muted)]">{metadata.description}</p></div>{isCurrent ? <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--color-background)] px-3 py-1 text-xs font-bold"><Check className="size-3.5" aria-hidden="true" />Current template</span> : isSelected ? <span className="shrink-0 rounded-full bg-[var(--color-primary)] px-3 py-1 text-xs font-bold text-white">Selected</span> : null}</div><ul className="mt-4 flex flex-wrap gap-2" aria-label={`${metadata.name} traits`}>{metadata.traits.map((trait) => <li key={trait} className="rounded-full border border-[var(--color-border)] px-3 py-1 text-xs text-[var(--color-muted)]">{trait}</li>)}</ul><div className="mt-5 grid grid-cols-2 gap-3"><button type="button" aria-label={`Preview ${metadata.name}`} onClick={() => setPreview(templateKey)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] font-medium"><Eye className="size-4" aria-hidden="true" />Preview</button><label htmlFor={`wedding-template-${templateKey}`} className={`inline-flex min-h-11 cursor-pointer items-center justify-center rounded-[var(--radius-md)] px-4 font-medium ${isSelected ? 'bg-[var(--color-primary)] text-white' : 'border border-[var(--color-border)]'}`}>{isSelected ? (isCurrent ? 'Current' : 'Selected') : `Select ${metadata.name}`}</label></div></div> })}</div>{form.formState.errors.templateKey?.message ? <p className="mt-3 text-sm text-[var(--color-error)]" role="alert">{form.formState.errors.templateKey.message}</p> : null}</fieldset>{preview ? <TemplatePreviewDialog templateKey={preview} wedding={wedding} values={form.getValues()} onClose={() => setPreview(null)} /> : null}</section>
+}
