@@ -322,7 +322,7 @@ export function RsvpExperience({ token, initialData }: RsvpExperienceProps) {
               </ActionButton>
             ) : <span />}
             {step < RSVP_STEPS.length - 1 ? (
-              <ActionButton onClick={() => void goForward()}>
+              <ActionButton onClick={(event) => { event.preventDefault(); void goForward() }}>
                 {step === 0 ? (invitation.hasSubmitted ? 'Edit RSVP' : 'Respond to invitation') : 'Continue'}
                 <ArrowRight className="size-4" aria-hidden="true" />
               </ActionButton>

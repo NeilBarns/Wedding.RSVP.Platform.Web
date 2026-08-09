@@ -1,3 +1,6 @@
+import { access } from 'node:fs/promises'
+import path from 'node:path'
+
 const privateIpv4 = /^(10\.|127\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/
 
 function isSafeHost(hostname: string) {
@@ -14,9 +17,13 @@ export function safeLocalUrl(name: string, fallback: string) {
   return url.origin
 }
 
+export async function requireApiRepoPath() {
+  const configured = process.env.PLAYWRIGHT_API_REPO_PATH?.trim()
+  if (!configured) throw new Error('PLAYWRIGHT_API_REPO_PATH is required and must point to the Laravel API repository.')
+  const resolved = path.resolve(configured)
+  try { await access(path.join(resolved, 'artisan')) } catch { throw new Error('PLAYWRIGHT_API_REPO_PATH must exist and contain an artisan file.') }
+  return resolved
+}
+
 export const frontendUrl = safeLocalUrl('PLAYWRIGHT_BASE_URL', 'http://localhost:5173')
-export const apiUrl = safeLocalUrl('PLAYWRIGHT_API_BASE_URL', 'http://localhost:8000')
-export const invitationToken = process.env.PLAYWRIGHT_INVITATION_TOKEN?.trim() || null
-export const adminCredentials = process.env.PLAYWRIGHT_ADMIN_EMAIL && process.env.PLAYWRIGHT_ADMIN_PASSWORD
-  ? { email: process.env.PLAYWRIGHT_ADMIN_EMAIL, password: process.env.PLAYWRIGHT_ADMIN_PASSWORD }
-  : null
+export const apiUrl = safeLocalUrl('PLAYWRIGHT_API_BASE_URL', 'http://127.0.0.1:8000')
