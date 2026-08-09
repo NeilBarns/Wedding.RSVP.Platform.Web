@@ -84,6 +84,26 @@ test('submitted household confirmation route uses Editorial Linen', async ({ pag
   await expect(page.getByRole('heading', { name: 'Your RSVP has been received' })).toBeVisible()
 })
 
+test('Modern Minimal preview uses the shared RSVP engine', async ({ page }) => {
+  const invitation = await getSubmittedInvitation()
+  await page.goto(`/invite/${invitation.token}?templatePreview=modern-minimal-v1`)
+  await expect(page.locator('[data-wedding-template="modern-minimal-v1"]')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'E2E Submitted Household' })).toBeVisible()
+  await page.getByRole('button', { name: 'Edit RSVP' }).click()
+  await expect(page.getByRole('navigation', { name: 'RSVP progress' })).toBeVisible()
+  await expect(page.getByText(/Step 2 of 5/i)).toBeVisible()
+})
+
+test('Modern Minimal confirmation preserves its preview when editing', async ({ page }) => {
+  const invitation = await getSubmittedInvitation()
+  await page.goto(`/invite/${invitation.token}/confirmation?templatePreview=modern-minimal-v1`)
+  await expect(page.locator('[data-wedding-template="modern-minimal-v1"]')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'RSVP received.' })).toBeVisible()
+  await page.getByRole('button', { name: 'Edit RSVP' }).click()
+  await expect(page).toHaveURL(new RegExp(`/invite/${invitation.token}\\?templatePreview=modern-minimal-v1$`))
+  await expect(page.locator('[data-wedding-template="modern-minimal-v1"]')).toBeVisible()
+})
+
 test('locked household is viewable but cannot be edited', async ({ page }) => {
   const invitation = await getLockedInvitation()
   await page.goto(`/invite/${invitation.token}`)

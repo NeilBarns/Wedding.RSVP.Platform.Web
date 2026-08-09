@@ -1,12 +1,13 @@
-import { useParams } from 'react-router-dom'
+import { useLocation, useParams } from 'react-router-dom'
 import { ErrorState } from '../../components/feedback/ErrorState'
 import { FullPageLoading } from '../../components/feedback/FullPageLoading'
 import { NotFoundState } from '../../components/feedback/NotFoundState'
 import { usePublicInvitation } from '../../features/invitation/usePublicInvitation'
-import { resolveWeddingTemplate } from '../../features/weddingTemplates/resolveTemplate'
+import { resolveWeddingTemplate, templatePreviewFromSearch } from '../../features/weddingTemplates/resolveTemplate'
 
 export default function InvitationPage() {
   const { token = '' } = useParams()
+  const location = useLocation()
   const { status, data, retry } = usePublicInvitation(token)
 
   if (status === 'loading') {
@@ -32,6 +33,6 @@ export default function InvitationPage() {
     )
   }
 
-  const TemplateInvitationPage = resolveWeddingTemplate(data.wedding.templateKey).InvitationPage
+  const TemplateInvitationPage = resolveWeddingTemplate(data.wedding.templateKey, templatePreviewFromSearch(location.search)).InvitationPage
   return <TemplateInvitationPage token={token} data={data} />
 }

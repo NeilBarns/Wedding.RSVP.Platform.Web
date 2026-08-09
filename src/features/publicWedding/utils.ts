@@ -38,3 +38,9 @@ export function weddingCountdown(date: string, now = new Date()) {
   if (days === 0) return { value: 0, label: 'Wedding day' }
   return { value: days, label: days === 1 ? 'day until the wedding' : 'days until the wedding' }
 }
+
+export function formatWeddingTime(value: string) {
+  const [hours, minutes] = value.split(':').map(Number)
+  if (!Number.isInteger(hours) || !Number.isInteger(minutes)) return value
+  return new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(new Date(2000, 0, 1, hours, minutes))
+}
