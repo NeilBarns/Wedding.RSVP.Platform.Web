@@ -1,0 +1,3 @@
+import type { ReactNode } from 'react'
+export function EditorField({ label, error, children, helper }: { label: string; error?: string; children: ReactNode; helper?: string }) { return <label className="block text-sm font-medium"><span>{label}</span>{children}{helper?<span className="mt-1 block text-xs text-[var(--color-muted)]">{helper}</span>:null}{error?<span className="mt-1 block text-sm text-[var(--color-error)]" role="alert">{error}</span>:null}</label> }
+export const inputClass = 'mt-2 min-h-11 w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text)]'

@@ -1,0 +1,12 @@
+export type HeroContent = { id: number; eyebrow: string | null; headline: string | null; subheadline: string | null; mediaUrl: string | null; mediaAltText: string | null; isPublished: boolean }
+export type StoryEntry = { id: number; title: string | null; body: string; imageUrl: string | null; imageAltText: string | null; eventDate: string | null; sortOrder: number; isPublished: boolean }
+export type WeddingEventType = 'ceremony' | 'reception' | 'other'
+export type WeddingEvent = { id: number; title: string; eventType: WeddingEventType; eventDate: string; startTime: string | null; endTime: string | null; venueName: string | null; addressLine: string | null; mapUrl: string | null; description: string | null; dressCodeOverride: string | null; sortOrder: number; isPublished: boolean }
+export type FaqEntry = { id: number; question: string; answer: string; sortOrder: number; isPublished: boolean }
+export type GalleryEntry = { id: number; imageUrl: string; altText: string | null; caption: string | null; sortOrder: number; isPublished: boolean }
+export type ContentSection = 'hero' | 'story' | 'events' | 'faq' | 'gallery'
+export type HeroPayload = Omit<HeroContent, 'id'>
+export type StoryPayload = Omit<StoryEntry, 'id'>
+export type EventPayload = Omit<WeddingEvent, 'id'>
+export type FaqPayload = Omit<FaqEntry, 'id'>
+export type GalleryPayload = Omit<GalleryEntry, 'id'>
