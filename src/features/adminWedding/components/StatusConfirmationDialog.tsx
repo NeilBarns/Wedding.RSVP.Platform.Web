@@ -1,0 +1,11 @@
+import { AlertTriangle, X } from 'lucide-react'
+import { useEffect, useId, useRef } from 'react'
+import { ActionButton } from '../../../components/ui/ActionButton'
+
+type Props = { title: string; message: string; confirmLabel: string; destructive?: boolean; saving: boolean; onConfirm: () => void; onCancel: () => void }
+
+export function StatusConfirmationDialog({ title, message, confirmLabel, destructive, saving, onConfirm, onCancel }: Props) {
+  const titleId = useId(); const panel = useRef<HTMLDivElement>(null)
+  useEffect(() => { const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null; panel.current?.focus(); const listener = (event: KeyboardEvent) => { if (event.key === 'Escape' && !saving) onCancel() }; document.addEventListener('keydown', listener); return () => { document.removeEventListener('keydown', listener); previous?.focus() } }, [onCancel, saving])
+  return <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/35 sm:items-center sm:p-5" role="presentation"><div ref={panel} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby={titleId} className="w-full max-w-lg rounded-t-[var(--radius-lg)] bg-[var(--color-surface)] p-6 shadow-2xl sm:rounded-[var(--radius-lg)]"><div className="flex items-start justify-between gap-4"><h2 id={titleId} className="font-[var(--font-display)] text-2xl">{title}</h2><button type="button" onClick={onCancel} disabled={saving} aria-label="Close confirmation" className="flex size-11 items-center justify-center rounded-[var(--radius-md)] disabled:opacity-50"><X className="size-5" aria-hidden="true" /></button></div><div className="mt-5 flex gap-3"><AlertTriangle className={`size-6 shrink-0 ${destructive ? 'text-[var(--color-error)]' : 'text-[var(--color-accent)]'}`} aria-hidden="true" /><p className="text-[var(--color-muted)]">{message}</p></div><div className="mt-7 flex justify-end gap-3"><ActionButton className="!bg-transparent !text-[var(--color-primary)] ring-1 ring-[var(--color-border)]" onClick={onCancel} disabled={saving}>Cancel</ActionButton><ActionButton className={destructive ? '!bg-[var(--color-error)]' : ''} onClick={onConfirm} disabled={saving}>{saving ? 'Saving…' : confirmLabel}</ActionButton></div></div></div>
+}
