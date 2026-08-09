@@ -2,13 +2,18 @@ export type AuthenticatedUser = {
   id: number
   name: string
   email: string
-  role: string
+  role: 'owner' | 'administrator'
 }
 
-export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated'
+export type AuthStatus =
+  | 'initializing'
+  | 'authenticated'
+  | 'unauthenticated'
+  | 'error'
 
 export type AuthState = {
   status: AuthStatus
   user: AuthenticatedUser | null
-  refresh: () => Promise<void>
+  refreshAuth: (showLoading?: boolean) => Promise<AuthenticatedUser | null>
+  logout: () => Promise<void>
 }

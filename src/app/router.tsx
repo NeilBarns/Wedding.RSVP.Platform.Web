@@ -4,7 +4,8 @@ import { createBrowserRouter } from 'react-router-dom'
 import { FullPageLoading } from '../components/feedback/FullPageLoading'
 import { AdminLayout } from '../components/layout/AdminLayout'
 import { PublicLayout } from '../components/layout/PublicLayout'
-import { AuthProvider } from '../features/auth/AuthProvider'
+import { AdminAuthRoot } from '../features/auth/AdminAuthRoot'
+import { RequireAuth } from '../features/auth/RequireAuth'
 
 const PublicHomePage = lazy(() => import('../pages/public/PublicHomePage'))
 const InvitationPage = lazy(() => import('../pages/public/InvitationPage'))
@@ -25,14 +26,6 @@ function withSuspense(page: ReactNode) {
   )
 }
 
-function AdminArea() {
-  return (
-    <AuthProvider>
-      <AdminLayout />
-    </AuthProvider>
-  )
-}
-
 export const router = createBrowserRouter([
   {
     element: <PublicLayout />,
@@ -46,20 +39,28 @@ export const router = createBrowserRouter([
     ],
   },
   {
-    path: '/admin/login',
-    element: (
-      <AuthProvider>{withSuspense(<AdminLoginPage />)}</AuthProvider>
-    ),
-  },
-  {
     path: '/admin',
-    element: <AdminArea />,
+    element: <AdminAuthRoot />,
     children: [
-      { index: true, element: withSuspense(<AdminDashboardPage />) },
-      { path: 'wedding', element: withSuspense(<AdminWeddingPage />) },
       {
-        path: 'invitations',
-        element: withSuspense(<AdminInvitationsPage />),
+        path: 'login',
+        element: withSuspense(<AdminLoginPage />),
+      },
+      {
+        element: <RequireAuth />,
+        children: [
+          {
+            element: <AdminLayout />,
+            children: [
+              { index: true, element: withSuspense(<AdminDashboardPage />) },
+              { path: 'wedding', element: withSuspense(<AdminWeddingPage />) },
+              {
+                path: 'invitations',
+                element: withSuspense(<AdminInvitationsPage />),
+              },
+            ],
+          },
+        ],
       },
     ],
   },
