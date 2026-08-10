@@ -42,7 +42,7 @@ function applyBackendErrors(
   if (!validationErrors) return
 
   for (const [backendPath, messages] of Object.entries(validationErrors)) {
-    const guestMatch = /^guests\.(\d+)\.(id|attendanceStatus|dietaryRequirements|accessibilityRequirements)$/.exec(backendPath)
+    const guestMatch = /^guests\.(\d+)\.(id|attendanceStatus|dietaryRequirements|accessibilityRequirements|mealChoice)$/.exec(backendPath)
     const path: FieldPath<RsvpFormValues> | null =
       backendPath === 'contactNumber' || backendPath === 'email' || backendPath === 'message'
         ? backendPath
@@ -88,6 +88,7 @@ export function RsvpExperience({ token, initialData, presentation }: RsvpExperie
       data.invitation.responseContactNumber,
       data.invitation.responseEmail,
       data.invitation.messageToCouple,
+      configuration,
     ),
     mode: 'onTouched',
   })
@@ -104,6 +105,7 @@ export function RsvpExperience({ token, initialData, presentation }: RsvpExperie
           freshData.invitation.responseContactNumber,
           freshData.invitation.responseEmail,
           freshData.invitation.messageToCouple,
+          resolveRsvpConfiguration(freshData.rsvpConfiguration),
         ),
       )
     }
@@ -162,6 +164,7 @@ export function RsvpExperience({ token, initialData, presentation }: RsvpExperie
           result.invitation.responseContactNumber,
           result.invitation.responseEmail,
           result.invitation.messageToCouple,
+          configuration,
         ),
       )
       setConfirmed(true)
@@ -291,6 +294,7 @@ export function RsvpExperience({ token, initialData, presentation }: RsvpExperie
                         onDecline={() => {
                           form.setValue(`guests.${index}.dietaryRequirements`, '')
                           form.setValue(`guests.${index}.accessibilityRequirements`, '')
+                          form.setValue(`guests.${index}.mealChoice`, '')
                         }}
                       />
                     ))}
@@ -313,6 +317,7 @@ export function RsvpExperience({ token, initialData, presentation }: RsvpExperie
                           register={form.register}
                           dietaryError={form.formState.errors.guests?.[index]?.dietaryRequirements?.message}
                           accessibilityError={form.formState.errors.guests?.[index]?.accessibilityRequirements?.message}
+                          mealError={form.formState.errors.guests?.[index]?.mealChoice?.message}
                         />
                       ) : null,
                     )}

@@ -19,6 +19,7 @@ const guestSchema = z.object({
   attendanceStatus: z.enum(['attending', 'declined']),
   dietaryRequirements: z.string(),
   accessibilityRequirements: z.string(),
+  mealChoice: z.string(),
 })
 
 export const createRsvpSchema = (invitedGuests: InvitationGuest[], configuration: RsvpConfiguration) =>
@@ -64,12 +65,16 @@ export const createRsvpSchema = (invitedGuests: InvitationGuest[], configuration
 
       const dietary = questionByKey(configuration, 'dietaryRequirements')
       const accessibility = questionByKey(configuration, 'accessibilityNeeds')
+      const meal = questionByKey(configuration, 'mealChoice')
+      const mealValues = new Set((meal.options ?? []).map((option) => option.value))
       values.guests.forEach((guest, index) => {
         if (guest.attendanceStatus !== 'attending') return
         if (dietary.enabled && guest.dietaryRequirements.length > RSVP_LIMITS.guestNote) context.addIssue({ code: 'custom', path: ['guests', index, 'dietaryRequirements'], message: 'Please keep dietary notes under 2,000 characters.' })
         if (dietary.enabled && dietary.required && !guest.dietaryRequirements.trim()) context.addIssue({ code: 'custom', path: ['guests', index, 'dietaryRequirements'], message: `${dietary.label} is required.` })
         if (accessibility.enabled && guest.accessibilityRequirements.length > RSVP_LIMITS.guestNote) context.addIssue({ code: 'custom', path: ['guests', index, 'accessibilityRequirements'], message: 'Please keep accessibility notes under 2,000 characters.' })
         if (accessibility.enabled && accessibility.required && !guest.accessibilityRequirements.trim()) context.addIssue({ code: 'custom', path: ['guests', index, 'accessibilityRequirements'], message: `${accessibility.label} is required.` })
+        if (meal.enabled && meal.required && !guest.mealChoice) context.addIssue({ code: 'custom', path: ['guests', index, 'mealChoice'], message: `${meal.label} is required.` })
+        if (meal.enabled && guest.mealChoice && !mealValues.has(guest.mealChoice)) context.addIssue({ code: 'custom', path: ['guests', index, 'mealChoice'], message: 'Please choose an available meal option.' })
       })
 
       const phone = questionByKey(configuration, 'responsePhone')
@@ -94,6 +99,7 @@ function normalizeOptional(value: string): string | null {
 export function toRsvpPayload(values: RsvpFormValues, configuration: RsvpConfiguration): RsvpPayload {
   const dietaryEnabled = questionByKey(configuration, 'dietaryRequirements').enabled
   const accessibilityEnabled = questionByKey(configuration, 'accessibilityNeeds').enabled
+  const mealEnabled = questionByKey(configuration, 'mealChoice').enabled
   return {
     guests: values.guests.map((guest) => ({
       id: guest.id,
@@ -106,6 +112,7 @@ export function toRsvpPayload(values: RsvpFormValues, configuration: RsvpConfigu
         guest.attendanceStatus === 'attending' && accessibilityEnabled
           ? normalizeOptional(guest.accessibilityRequirements)
           : null,
+      mealChoice: guest.attendanceStatus === 'attending' && mealEnabled ? normalizeOptional(guest.mealChoice) : null,
     })),
     contactNumber: questionByKey(configuration, 'responsePhone').enabled ? normalizeOptional(values.contactNumber) : null,
     email: questionByKey(configuration, 'responseEmail').enabled ? normalizeOptional(values.email)?.toLowerCase() ?? null : null,
@@ -118,6 +125,7 @@ export function invitationToFormValues(
   contactNumber: string | null,
   email: string | null,
   message: string | null,
+  configuration?: RsvpConfiguration,
 ): DefaultValues<RsvpFormValues> {
   return {
     guests: guests.map((guest) => ({
@@ -128,6 +136,7 @@ export function invitationToFormValues(
           : guest.attendanceStatus,
       dietaryRequirements: guest.dietaryRequirements ?? '',
       accessibilityRequirements: guest.accessibilityRequirements ?? '',
+      mealChoice: (configuration && (questionByKey(configuration, 'mealChoice').options ?? []).some((option) => option.value === guest.mealChoice)) ? guest.mealChoice ?? '' : '',
     })),
     contactNumber: contactNumber ?? '',
     email: email ?? '',

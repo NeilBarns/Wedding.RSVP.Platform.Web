@@ -98,10 +98,17 @@ test('RSVP configuration persists and drives the shared Modern Minimal experienc
   const accessibility = page.getByRole('group', { name: 'Accessibility needs configuration' })
   const email = page.getByRole('group', { name: 'Email address configuration' })
   const message = page.getByRole('group', { name: 'Message to the couple configuration' })
+  const meal = page.getByRole('group', { name: 'Meal choice configuration' })
   await dietary.getByLabel('Enabled').uncheck()
   await accessibility.getByLabel(/Helper text/).fill('Tell us what would make the celebration comfortable.')
   await accessibility.getByLabel('Question label').fill('Accessibility support')
   await email.getByLabel('Required').check()
+  await meal.getByLabel('Enabled').check()
+  await meal.getByLabel('Required').check()
+  await page.getByRole('button', { name: 'Add option' }).click()
+  await page.getByLabel('Label', { exact: true }).last().fill('Roast Chicken')
+  await page.getByRole('button', { name: 'Add option' }).click()
+  await page.getByLabel('Label', { exact: true }).last().fill('Vegetarian')
   await message.getByRole('button', { name: 'Move Message to the couple up' }).click()
   const [configurationResponse] = await Promise.all([
     page.waitForResponse((response) => response.url().endsWith('/api/admin/rsvp-configuration') && response.request().method() === 'PUT'),
@@ -114,6 +121,8 @@ test('RSVP configuration persists and drives the shared Modern Minimal experienc
   await expect(page.getByRole('group', { name: 'Dietary requirements configuration' }).getByLabel('Enabled')).not.toBeChecked()
   await expect(page.getByRole('group', { name: 'Accessibility support configuration' }).getByLabel(/Helper text/)).toHaveValue('Tell us what would make the celebration comfortable.')
   await expect(page.getByRole('group', { name: 'Email address configuration' }).getByLabel('Required')).toBeChecked()
+  await expect(page.getByLabel('Value').first()).toHaveValue('roast-chicken')
+  await expect(page.getByLabel('Value').first()).toHaveAttribute('readonly', '')
 
   const publicPage = await page.context().newPage()
   await publicPage.goto(`/invite/${invitation.token}?templatePreview=modern-minimal-v1`)
@@ -125,6 +134,10 @@ test('RSVP configuration persists and drives the shared Modern Minimal experienc
   await expect(publicPage.getByLabel('Dietary requirements')).toHaveCount(0)
   await expect(publicPage.getByLabel('Accessibility support')).toBeVisible()
   await expect(publicPage.getByText('Tell us what would make the celebration comfortable.')).toBeVisible()
+  await expect(publicPage.getByRole('group', { name: /Meal choice/ })).toBeVisible()
+  await publicPage.getByRole('button', { name: 'Continue' }).click()
+  await expect(publicPage.getByText('Meal choice is required.')).toBeVisible()
+  await publicPage.getByLabel('Vegetarian').check()
   await publicPage.getByRole('button', { name: 'Continue' }).click()
   await publicPage.getByRole('button', { name: 'Continue' }).click()
   await expect(publicPage.getByLabel('Email address')).toHaveAttribute('required', '')
@@ -133,6 +146,7 @@ test('RSVP configuration persists and drives the shared Modern Minimal experienc
   await expect(publicPage.getByText('Email address is required.')).toHaveCount(0)
   await publicPage.getByRole('button', { name: 'Continue' }).click()
   await expect(publicPage.getByRole('heading', { name: 'Review your RSVP' })).toBeVisible()
+  await expect(publicPage.getByText('Vegetarian')).toBeVisible()
   await expect(publicPage.getByText('Dietary requirements')).toHaveCount(0)
   await publicPage.close()
 
@@ -142,6 +156,7 @@ test('RSVP configuration persists and drives the shared Modern Minimal experienc
   await configuredAccessibility.getByLabel(/Helper text/).fill('')
   await configuredAccessibility.getByLabel('Question label').fill('Accessibility needs')
   await page.getByRole('group', { name: 'Email address configuration' }).getByLabel('Required').uncheck()
+  await page.getByRole('group', { name: 'Meal choice configuration' }).getByLabel('Enabled').uncheck()
   const [restoreResponse] = await Promise.all([
     page.waitForResponse((response) => response.url().endsWith('/api/admin/rsvp-configuration') && response.request().method() === 'PUT'),
     page.getByRole('button', { name: 'Save configuration' }).click(),
