@@ -14,6 +14,7 @@ const AdminLoginPage = lazy(() => import('../pages/admin/AdminLoginPage'))
 const AdminDashboardPage = lazy(() => import('../pages/admin/AdminDashboardPage'))
 const AdminWeddingPage = lazy(() => import('../pages/admin/AdminWeddingPage'))
 const AdminWeddingContentPage = lazy(() => import('../pages/admin/AdminWeddingContentPage'))
+const AdminRsvpConfigurationPage = lazy(() => import('../pages/admin/AdminRsvpConfigurationPage'))
 const AdminInvitationsPage = lazy(
   () => import('../pages/admin/AdminInvitationsPage'),
 )
@@ -59,6 +60,7 @@ export const router = createBrowserRouter([
               { index: true, element: withSuspense(<AdminDashboardPage />) },
               { path: 'wedding', element: withSuspense(<AdminWeddingPage />) },
               { path: 'content', element: withSuspense(<AdminWeddingContentPage />) },
+              { path: 'rsvp-configuration', element: withSuspense(<AdminRsvpConfigurationPage />) },
               {
                 path: 'invitations',
                 element: withSuspense(<AdminInvitationsPage />),
