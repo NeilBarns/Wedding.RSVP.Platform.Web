@@ -4,6 +4,8 @@ import type {
   InvitationGuest,
   RsvpPayload,
 } from './types'
+import { questionByKey } from '../rsvpConfiguration/resolve'
+import type { RsvpConfiguration } from '../rsvpConfiguration/types'
 
 export const RSVP_LIMITS = {
   guestNote: 2_000,
@@ -15,37 +17,17 @@ export const RSVP_LIMITS = {
 const guestSchema = z.object({
   id: z.number().int(),
   attendanceStatus: z.enum(['attending', 'declined']),
-  dietaryRequirements: z
-    .string()
-    .max(RSVP_LIMITS.guestNote, 'Please keep dietary notes under 2,000 characters.'),
-  accessibilityRequirements: z
-    .string()
-    .max(
-      RSVP_LIMITS.guestNote,
-      'Please keep accessibility notes under 2,000 characters.',
-    ),
+  dietaryRequirements: z.string(),
+  accessibilityRequirements: z.string(),
 })
 
-export const createRsvpSchema = (invitedGuests: InvitationGuest[]) =>
+export const createRsvpSchema = (invitedGuests: InvitationGuest[], configuration: RsvpConfiguration) =>
   z
     .object({
       guests: z.array(guestSchema),
-      contactNumber: z
-        .string()
-        .trim()
-        .max(RSVP_LIMITS.contactNumber, 'Please keep the contact number under 30 characters.'),
-      email: z
-        .string()
-        .trim()
-        .max(RSVP_LIMITS.email, 'Please keep the email address under 254 characters.')
-        .refine(
-          (value) => value === '' || z.email().safeParse(value).success,
-          'Please enter a valid email address.',
-        ),
-      message: z
-        .string()
-        .trim()
-        .max(RSVP_LIMITS.message, 'Please keep your message under 5,000 characters.'),
+      contactNumber: z.string(),
+      email: z.string(),
+      message: z.string(),
     })
     .superRefine((values, context) => {
       const expectedIds = new Set(invitedGuests.map((guest) => guest.id))
@@ -79,6 +61,27 @@ export const createRsvpSchema = (invitedGuests: InvitationGuest[]) =>
           })
         }
       })
+
+      const dietary = questionByKey(configuration, 'dietaryRequirements')
+      const accessibility = questionByKey(configuration, 'accessibilityNeeds')
+      values.guests.forEach((guest, index) => {
+        if (guest.attendanceStatus !== 'attending') return
+        if (dietary.enabled && guest.dietaryRequirements.length > RSVP_LIMITS.guestNote) context.addIssue({ code: 'custom', path: ['guests', index, 'dietaryRequirements'], message: 'Please keep dietary notes under 2,000 characters.' })
+        if (dietary.enabled && dietary.required && !guest.dietaryRequirements.trim()) context.addIssue({ code: 'custom', path: ['guests', index, 'dietaryRequirements'], message: `${dietary.label} is required.` })
+        if (accessibility.enabled && guest.accessibilityRequirements.length > RSVP_LIMITS.guestNote) context.addIssue({ code: 'custom', path: ['guests', index, 'accessibilityRequirements'], message: 'Please keep accessibility notes under 2,000 characters.' })
+        if (accessibility.enabled && accessibility.required && !guest.accessibilityRequirements.trim()) context.addIssue({ code: 'custom', path: ['guests', index, 'accessibilityRequirements'], message: `${accessibility.label} is required.` })
+      })
+
+      const phone = questionByKey(configuration, 'responsePhone')
+      const email = questionByKey(configuration, 'responseEmail')
+      const message = questionByKey(configuration, 'messageToCouple')
+      if (phone.enabled && values.contactNumber.length > RSVP_LIMITS.contactNumber) context.addIssue({ code: 'custom', path: ['contactNumber'], message: 'Please keep the contact number under 30 characters.' })
+      if (phone.enabled && phone.required && !values.contactNumber.trim()) context.addIssue({ code: 'custom', path: ['contactNumber'], message: `${phone.label} is required.` })
+      if (email.enabled && values.email.length > RSVP_LIMITS.email) context.addIssue({ code: 'custom', path: ['email'], message: 'Please keep the email address under 254 characters.' })
+      if (email.enabled && values.email.trim() && !z.email().safeParse(values.email.trim()).success) context.addIssue({ code: 'custom', path: ['email'], message: 'Please enter a valid email address.' })
+      if (email.enabled && email.required && !values.email.trim()) context.addIssue({ code: 'custom', path: ['email'], message: `${email.label} is required.` })
+      if (message.enabled && values.message.length > RSVP_LIMITS.message) context.addIssue({ code: 'custom', path: ['message'], message: 'Please keep your message under 5,000 characters.' })
+      if (message.enabled && message.required && !values.message.trim()) context.addIssue({ code: 'custom', path: ['message'], message: `${message.label} is required.` })
     })
 
 export type RsvpFormValues = z.infer<ReturnType<typeof createRsvpSchema>>
@@ -88,23 +91,25 @@ function normalizeOptional(value: string): string | null {
   return normalized === '' ? null : normalized
 }
 
-export function toRsvpPayload(values: RsvpFormValues): RsvpPayload {
+export function toRsvpPayload(values: RsvpFormValues, configuration: RsvpConfiguration): RsvpPayload {
+  const dietaryEnabled = questionByKey(configuration, 'dietaryRequirements').enabled
+  const accessibilityEnabled = questionByKey(configuration, 'accessibilityNeeds').enabled
   return {
     guests: values.guests.map((guest) => ({
       id: guest.id,
       attendanceStatus: guest.attendanceStatus,
       dietaryRequirements:
-        guest.attendanceStatus === 'attending'
+        guest.attendanceStatus === 'attending' && dietaryEnabled
           ? normalizeOptional(guest.dietaryRequirements)
           : null,
       accessibilityRequirements:
-        guest.attendanceStatus === 'attending'
+        guest.attendanceStatus === 'attending' && accessibilityEnabled
           ? normalizeOptional(guest.accessibilityRequirements)
           : null,
     })),
-    contactNumber: normalizeOptional(values.contactNumber),
-    email: normalizeOptional(values.email)?.toLowerCase() ?? null,
-    message: normalizeOptional(values.message),
+    contactNumber: questionByKey(configuration, 'responsePhone').enabled ? normalizeOptional(values.contactNumber) : null,
+    email: questionByKey(configuration, 'responseEmail').enabled ? normalizeOptional(values.email)?.toLowerCase() ?? null : null,
+    message: questionByKey(configuration, 'messageToCouple').enabled ? normalizeOptional(values.message) : null,
   }
 }
 

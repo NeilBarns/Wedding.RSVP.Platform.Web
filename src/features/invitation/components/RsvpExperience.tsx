@@ -12,6 +12,7 @@ import { ActionButton } from '../../../components/ui/ActionButton'
 import { NotFoundState } from '../../../components/feedback/NotFoundState'
 import { ApiError } from '../../../lib/api'
 import type { RsvpPresentation } from '../../weddingTemplates/types'
+import { resolveRsvpConfiguration } from '../../rsvpConfiguration/resolve'
 import { getPublicInvitation, submitPublicRsvp } from '../api'
 import {
   createRsvpSchema,
@@ -74,9 +75,11 @@ export function RsvpExperience({ token, initialData, presentation }: RsvpExperie
   const [submitMessage, setSubmitMessage] = useState<string | null>(null)
   const [membershipChanged, setMembershipChanged] = useState(false)
   const [invitationMissing, setInvitationMissing] = useState(false)
+  const configuration = useMemo(() => resolveRsvpConfiguration(data.rsvpConfiguration), [data.rsvpConfiguration])
+  const activeGuestQuestions = configuration.guestQuestions.filter((question) => question.enabled && question.key !== 'attendance')
   const schema = useMemo(
-    () => createRsvpSchema(data.invitation.guests),
-    [data.invitation.guests],
+    () => createRsvpSchema(data.invitation.guests, configuration),
+    [configuration, data.invitation.guests],
   )
   const form = useForm<RsvpFormValues>({
     resolver: zodResolver(schema),
@@ -127,7 +130,15 @@ export function RsvpExperience({ token, initialData, presentation }: RsvpExperie
     } else if (step === 2) {
       valid = await form.trigger('guests')
     } else if (step === 3) {
-      valid = await form.trigger(['contactNumber', 'email', 'message'])
+      // Runtime configuration uses cross-field refinement. Parse the latest complete
+      // value so a corrected field is not held back by a stale subset-trigger result.
+      const parsed = schema.safeParse(form.getValues())
+      if (parsed.success) {
+        form.clearErrors()
+        valid = true
+      } else {
+        valid = await form.trigger()
+      }
     }
 
     if (valid) {
@@ -142,7 +153,7 @@ export function RsvpExperience({ token, initialData, presentation }: RsvpExperie
     setMembershipChanged(false)
 
     try {
-      const result = await submitPublicRsvp(token, toRsvpPayload(valuesToSubmit))
+      const result = await submitPublicRsvp(token, toRsvpPayload(valuesToSubmit, configuration))
       const nextData = { ...data, invitation: result.invitation }
       setData(nextData)
       form.reset(
@@ -293,26 +304,27 @@ export function RsvpExperience({ token, initialData, presentation }: RsvpExperie
                   <p className="mt-2 text-[var(--color-muted)]">Optional notes for guests who are attending.</p>
                   <div className="mt-6 space-y-4">
                     {invitation.guests.map((guest, index) =>
-                      values.guests[index]?.attendanceStatus === 'attending' ? (
+                      values.guests[index]?.attendanceStatus === 'attending' && activeGuestQuestions.length ? (
                         <GuestDetailsFields
                           key={guest.id}
                           guest={guest}
                           index={index}
+                          questions={activeGuestQuestions}
                           register={form.register}
                           dietaryError={form.formState.errors.guests?.[index]?.dietaryRequirements?.message}
                           accessibilityError={form.formState.errors.guests?.[index]?.accessibilityRequirements?.message}
                         />
                       ) : null,
                     )}
-                    {!values.guests.some((guest) => guest.attendanceStatus === 'attending') ? (
+                    {!values.guests.some((guest) => guest.attendanceStatus === 'attending') || !activeGuestQuestions.length ? (
                       <p className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-[var(--color-muted)]">No additional guest details are needed.</p>
                     ) : null}
                   </div>
                 </section>
               ) : null}
 
-              {step === 3 ? <HouseholdDetailsForm register={form.register} errors={form.formState.errors} /> : null}
-              {step === 4 ? <RsvpReview values={values} invitedGuests={invitation.guests} /> : null}
+              {step === 3 ? <HouseholdDetailsForm questions={configuration.householdQuestions} register={form.register} clearErrors={form.clearErrors} errors={form.formState.errors} /> : null}
+              {step === 4 ? <RsvpReview values={values} invitedGuests={invitation.guests} configuration={configuration} /> : null}
             </motion.div>
           </AnimatePresence>
 

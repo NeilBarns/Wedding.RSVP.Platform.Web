@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { adminStoragePath, getSubmittedInvitation } from './helpers/testData'
+import { adminStoragePath, getFreshInvitation, getSubmittedInvitation } from './helpers/testData'
 
 test.use({ storageState: adminStoragePath })
 
@@ -83,6 +83,79 @@ test('template gallery previews and persists a template without changing its the
   await page.getByRole('dialog', { name: 'Change wedding template?' }).getByRole('button', { name: 'Apply template' }).click()
   await expect(page.getByText('Wedding template and settings saved.')).toBeVisible()
   await expect(editorial.getByText('Current template')).toBeVisible()
+})
+
+test('RSVP configuration persists and drives the shared Modern Minimal experience', async ({ page }) => {
+  test.setTimeout(60_000)
+  const invitation = await getFreshInvitation()
+  await page.goto('/admin/rsvp-configuration')
+  await expect(page.getByRole('heading', { name: 'RSVP configuration' })).toBeVisible()
+  const attendance = page.locator('article[aria-label="Attendance system field"]')
+  await expect(attendance).toContainText('System field')
+  await expect(attendance.locator('input')).toHaveCount(0)
+
+  const dietary = page.getByRole('group', { name: 'Dietary requirements configuration' })
+  const accessibility = page.getByRole('group', { name: 'Accessibility needs configuration' })
+  const email = page.getByRole('group', { name: 'Email address configuration' })
+  const message = page.getByRole('group', { name: 'Message to the couple configuration' })
+  await dietary.getByLabel('Enabled').uncheck()
+  await accessibility.getByLabel(/Helper text/).fill('Tell us what would make the celebration comfortable.')
+  await accessibility.getByLabel('Question label').fill('Accessibility support')
+  await email.getByLabel('Required').check()
+  await message.getByRole('button', { name: 'Move Message to the couple up' }).click()
+  const [configurationResponse] = await Promise.all([
+    page.waitForResponse((response) => response.url().endsWith('/api/admin/rsvp-configuration') && response.request().method() === 'PUT'),
+    page.getByRole('button', { name: 'Save configuration' }).click(),
+  ])
+  expect(configurationResponse.status()).toBe(200)
+  await expect(page.getByText('RSVP configuration saved.')).toBeVisible()
+
+  await page.reload()
+  await expect(page.getByRole('group', { name: 'Dietary requirements configuration' }).getByLabel('Enabled')).not.toBeChecked()
+  await expect(page.getByRole('group', { name: 'Accessibility support configuration' }).getByLabel(/Helper text/)).toHaveValue('Tell us what would make the celebration comfortable.')
+  await expect(page.getByRole('group', { name: 'Email address configuration' }).getByLabel('Required')).toBeChecked()
+
+  const publicPage = await page.context().newPage()
+  await publicPage.goto(`/invite/${invitation.token}?templatePreview=modern-minimal-v1`)
+  await expect(publicPage.locator('[data-wedding-template="modern-minimal-v1"]')).toBeVisible()
+  await publicPage.getByRole('button', { name: 'Respond to invitation' }).click()
+  await publicPage.getByRole('group', { name: 'E2E Guest One' }).getByText('Joyfully accepts').click()
+  await publicPage.getByRole('group', { name: 'E2E Guest Two' }).getByText('Regretfully declines').click()
+  await publicPage.getByRole('button', { name: 'Continue' }).click()
+  await expect(publicPage.getByLabel('Dietary requirements')).toHaveCount(0)
+  await expect(publicPage.getByLabel('Accessibility support')).toBeVisible()
+  await expect(publicPage.getByText('Tell us what would make the celebration comfortable.')).toBeVisible()
+  await publicPage.getByRole('button', { name: 'Continue' }).click()
+  await publicPage.getByRole('button', { name: 'Continue' }).click()
+  await expect(publicPage.getByLabel('Email address')).toHaveAttribute('required', '')
+  await expect(publicPage.getByText('Email address is required.')).toBeVisible()
+  await publicPage.getByLabel('Email address').fill('configured@example.com')
+  await expect(publicPage.getByText('Email address is required.')).toHaveCount(0)
+  await publicPage.getByRole('button', { name: 'Continue' }).click()
+  await expect(publicPage.getByRole('heading', { name: 'Review your RSVP' })).toBeVisible()
+  await expect(publicPage.getByText('Dietary requirements')).toHaveCount(0)
+  await publicPage.close()
+
+  await page.goto('/admin/rsvp-configuration')
+  await page.getByRole('group', { name: 'Dietary requirements configuration' }).getByLabel('Enabled').check()
+  const configuredAccessibility = page.getByRole('group', { name: 'Accessibility support configuration' })
+  await configuredAccessibility.getByLabel(/Helper text/).fill('')
+  await configuredAccessibility.getByLabel('Question label').fill('Accessibility needs')
+  await page.getByRole('group', { name: 'Email address configuration' }).getByLabel('Required').uncheck()
+  const [restoreResponse] = await Promise.all([
+    page.waitForResponse((response) => response.url().endsWith('/api/admin/rsvp-configuration') && response.request().method() === 'PUT'),
+    page.getByRole('button', { name: 'Save configuration' }).click(),
+  ])
+  expect(restoreResponse.status()).toBe(200)
+  await page.reload()
+  const [orderRestoreResponse] = await Promise.all([
+    page.waitForResponse((response) => response.url().endsWith('/api/admin/rsvp-configuration') && response.request().method() === 'PUT'),
+    (async () => {
+      await page.getByRole('group', { name: 'Message to the couple configuration' }).getByRole('button', { name: 'Move Message to the couple down' }).click()
+      await page.getByRole('button', { name: 'Save configuration' }).click()
+    })(),
+  ])
+  expect(orderRestoreResponse.status()).toBe(200)
 })
 
 test('wedding content tabs switch panels', async ({ page }) => {

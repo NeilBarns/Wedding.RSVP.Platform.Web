@@ -2,6 +2,7 @@ import {
   CalendarDays,
   BookOpen,
   LayoutDashboard,
+  ListChecks,
   LogOut,
   Mail,
   UserRound,
@@ -14,6 +15,7 @@ import type { AuthenticatedUser } from '../../features/auth/types'
 const navigation = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/admin/wedding', label: 'Wedding Settings', icon: CalendarDays },
+  { to: '/admin/rsvp-configuration', label: 'RSVP Configuration', icon: ListChecks },
   { to: '/admin/content', label: 'Wedding Content', icon: BookOpen },
   { to: '/admin/invitations', label: 'Invitations', icon: Mail },
 ]

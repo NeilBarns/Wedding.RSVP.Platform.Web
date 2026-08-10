@@ -33,6 +33,7 @@ export type PublicInvitation = {
 export type PublicInvitationData = {
   invitation: PublicInvitation
   wedding: WeddingSummary
+  rsvpConfiguration?: import('../rsvpConfiguration/types').RsvpConfiguration
 }
 
 export type RsvpDecision = Exclude<AttendanceStatus, 'pending'>
