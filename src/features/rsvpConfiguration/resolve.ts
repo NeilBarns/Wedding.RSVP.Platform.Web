@@ -1,12 +1,13 @@
 import { configurableRsvpQuestionKeys, rsvpQuestionKeys, type ConfigurableRsvpQuestionKey, type RsvpConfiguration, type RsvpQuestion, type RsvpQuestionKey, type RsvpQuestionScope } from './types'
 
 const defaults: Record<RsvpQuestionKey, RsvpQuestion> = {
-  attendance: { key: 'attendance', scope: 'guest', enabled: true, required: true, label: 'Attendance', helperText: null, sortOrder: 0, system: true },
-  dietaryRequirements: { key: 'dietaryRequirements', scope: 'guest', enabled: true, required: false, label: 'Dietary requirements', helperText: null, sortOrder: 10, system: false },
-  accessibilityNeeds: { key: 'accessibilityNeeds', scope: 'guest', enabled: true, required: false, label: 'Accessibility requirements', helperText: null, sortOrder: 20, system: false },
-  responsePhone: { key: 'responsePhone', scope: 'household', enabled: true, required: false, label: 'Contact number', helperText: null, sortOrder: 10, system: false },
-  responseEmail: { key: 'responseEmail', scope: 'household', enabled: true, required: false, label: 'Email', helperText: null, sortOrder: 20, system: false },
-  messageToCouple: { key: 'messageToCouple', scope: 'household', enabled: true, required: false, label: 'Message to Neil & Hazel', helperText: null, sortOrder: 30, system: false },
+  attendance: { key: 'attendance', scope: 'guest', enabled: true, required: true, label: 'Attendance', helperText: null, sortOrder: 0, system: true, type: 'singleChoice' },
+  dietaryRequirements: { key: 'dietaryRequirements', scope: 'guest', enabled: true, required: false, label: 'Dietary requirements', helperText: null, sortOrder: 10, system: false, type: 'text' },
+  accessibilityNeeds: { key: 'accessibilityNeeds', scope: 'guest', enabled: true, required: false, label: 'Accessibility requirements', helperText: null, sortOrder: 20, system: false, type: 'text' },
+  mealChoice: { key: 'mealChoice', scope: 'guest', enabled: false, required: false, label: 'Meal choice', helperText: null, sortOrder: 30, system: false, type: 'singleChoice', options: [] },
+  responsePhone: { key: 'responsePhone', scope: 'household', enabled: true, required: false, label: 'Contact number', helperText: null, sortOrder: 10, system: false, type: 'text' },
+  responseEmail: { key: 'responseEmail', scope: 'household', enabled: true, required: false, label: 'Email', helperText: null, sortOrder: 20, system: false, type: 'text' },
+  messageToCouple: { key: 'messageToCouple', scope: 'household', enabled: true, required: false, label: 'Message to Neil & Hazel', helperText: null, sortOrder: 30, system: false, type: 'textarea' },
 }
 
 export function isRsvpQuestionKey(value: unknown): value is RsvpQuestionKey {
@@ -20,7 +21,7 @@ export function isConfigurableRsvpQuestionKey(value: unknown): value is Configur
 function validQuestion(value: unknown): value is RsvpQuestion {
   if (!value || typeof value !== 'object') return false
   const question = value as Partial<RsvpQuestion>
-  return isRsvpQuestionKey(question.key) && (question.scope === 'guest' || question.scope === 'household') && typeof question.enabled === 'boolean' && typeof question.required === 'boolean' && typeof question.label === 'string' && (question.helperText === null || typeof question.helperText === 'string') && typeof question.sortOrder === 'number' && typeof question.system === 'boolean'
+  return isRsvpQuestionKey(question.key) && (question.scope === 'guest' || question.scope === 'household') && typeof question.enabled === 'boolean' && typeof question.required === 'boolean' && typeof question.label === 'string' && (question.helperText === null || typeof question.helperText === 'string') && typeof question.sortOrder === 'number' && typeof question.system === 'boolean' && (question.type === undefined || question.type === 'text' || question.type === 'textarea' || question.type === 'singleChoice')
 }
 
 function sortQuestions(questions: RsvpQuestion[]) {
@@ -39,7 +40,7 @@ export function resolveRsvpConfiguration(value: unknown): RsvpConfiguration {
     }
     const expected = defaults[candidate.key]
     if (candidate.scope !== expected.scope) continue
-    known.set(candidate.key, candidate.key === 'attendance' ? { ...defaults.attendance } : { ...candidate, system: false })
+    known.set(candidate.key, candidate.key === 'attendance' ? { ...defaults.attendance } : { ...candidate, system: false, type: expected.type, ...(candidate.key === 'mealChoice' ? { options: Array.isArray(candidate.options) ? candidate.options : [] } : {}) })
   }
 
   const resolved = rsvpQuestionKeys.map((key) => known.get(key) ?? { ...defaults[key] })

@@ -7,6 +7,7 @@ export type InvitationGuest = {
   attendanceStatus: AttendanceStatus
   dietaryRequirements: string | null
   accessibilityRequirements: string | null
+  mealChoice: string | null
   sortOrder: number
 }
 
@@ -43,6 +44,7 @@ export type RsvpGuestPayload = {
   attendanceStatus: RsvpDecision
   dietaryRequirements: string | null
   accessibilityRequirements: string | null
+  mealChoice: string | null
 }
 
 export type RsvpPayload = {

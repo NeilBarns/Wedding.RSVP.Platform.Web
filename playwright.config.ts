@@ -1,5 +1,9 @@
 import { defineConfig, devices } from '@playwright/test'
-import { apiUrl, frontendUrl } from './e2e/helpers/env'
+import { apiUrl, frontendUrl, requireApiRepoPath } from './e2e/helpers/env'
+
+const apiRepo = requireApiRepoPath()
+const frontend = new URL(frontendUrl)
+const api = new URL(apiUrl)
 
 export default defineConfig({
   testDir: './e2e',
@@ -18,13 +22,29 @@ export default defineConfig({
     video: 'retain-on-failure',
     trace: 'on-first-retry',
   },
-  webServer: {
-    command: 'npm run dev -- --host 0.0.0.0',
-    url: frontendUrl,
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-    env: { ...process.env, VITE_API_BASE_URL: apiUrl },
-  },
+  webServer: [
+    {
+      command: `php artisan serve --env=e2e --host=${api.hostname} --port=${api.port}`,
+      cwd: apiRepo,
+      url: `${apiUrl}/api/health`,
+      reuseExistingServer: false,
+      timeout: 120_000,
+      env: {
+        ...process.env,
+        APP_URL: apiUrl,
+        FRONTEND_URL: frontendUrl,
+        FRONTEND_URLS: frontendUrl,
+        SANCTUM_STATEFUL_DOMAINS: frontend.host,
+      },
+    },
+    {
+      command: `npm run dev -- --host ${frontend.hostname} --port ${frontend.port} --strictPort`,
+      url: `${frontendUrl}/admin/login`,
+      reuseExistingServer: false,
+      timeout: 120_000,
+      env: { ...process.env, VITE_API_BASE_URL: apiUrl },
+    },
+  ],
   projects: [
     { name: 'chromium', testIgnore: /mobile\.spec\.ts/, use: { ...devices['Desktop Chrome'] } },
     { name: 'mobile-chromium', testMatch: /mobile\.spec\.ts/, use: { ...devices['Pixel 7'] } },

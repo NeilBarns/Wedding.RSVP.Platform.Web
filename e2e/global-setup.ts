@@ -9,7 +9,7 @@ import { adminStoragePath, fixturePath, parseE2eFixture } from './helpers/testDa
 const execute = promisify(execFile)
 
 export default async function globalSetup() {
-  const apiRepo = await requireApiRepoPath()
+  const apiRepo = requireApiRepoPath()
   let stdout: string
   try {
     ({ stdout } = await execute('php', ['artisan', '--env=e2e', 'e2e:reset', '--json'], { cwd: apiRepo, windowsHide: true, maxBuffer: 1024 * 1024 }))
@@ -29,7 +29,7 @@ export default async function globalSetup() {
     const payload = await response.json() as unknown
     if (!isExpectedWedding(payload)) throw new Error('mismatch')
   } catch {
-    throw new Error('The running API is not the reset E2E fixture. Start it with php artisan serve --env=e2e --host=127.0.0.1 --port=8000.')
+    throw new Error(`The E2E API at ${apiUrl} is reachable but does not expose the reset E2E fixture. Frontend origin: ${frontendUrl}.`)
   } finally { await api.dispose() }
 
   await mkdir(path.dirname(fixturePath), { recursive: true })

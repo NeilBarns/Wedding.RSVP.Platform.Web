@@ -1,7 +1,8 @@
 import { api } from '../../lib/api'
-import type { RsvpConfigurationUpdate, RsvpQuestion } from '../rsvpConfiguration/types'
+import type { AdminRsvpOption, RsvpConfigurationUpdate, RsvpQuestion } from '../rsvpConfiguration/types'
 
-export type AdminRsvpConfiguration = { questions: RsvpQuestion[] }
+export type AdminRsvpQuestion = Omit<RsvpQuestion, 'options'> & { options?: AdminRsvpOption[] }
+export type AdminRsvpConfiguration = { questions: AdminRsvpQuestion[] }
 type ConfigurationResponse = { data: AdminRsvpConfiguration }
 
 export async function getAdminRsvpConfiguration(options?: { signal?: AbortSignal }) {

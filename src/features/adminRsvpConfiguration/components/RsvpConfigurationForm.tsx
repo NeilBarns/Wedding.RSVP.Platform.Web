@@ -8,11 +8,12 @@ import type { RsvpQuestionUpdate, RsvpQuestionScope } from '../../rsvpConfigurat
 import { updateAdminRsvpConfiguration, type AdminRsvpConfiguration } from '../api'
 import { rsvpConfigurationSchema, toConfigurationPayload, toQuestionValues, type RsvpConfigurationFormValues } from '../validation'
 import { QuestionCard, SystemAttendanceCard } from './QuestionCard'
+import { MealOptionEditor } from './MealOptionEditor'
 
 type Props = { configuration: AdminRsvpConfiguration; onSaved: (configuration: AdminRsvpConfiguration) => void; onSessionExpired: () => void }
 
 function configurable(questions: AdminRsvpConfiguration['questions']): RsvpQuestionUpdate[] {
-  return questions.flatMap(({ key, enabled, required, label, helperText, sortOrder }) => isConfigurableRsvpQuestionKey(key) ? [{ key, enabled, required, label, helperText, sortOrder }] : [])
+  return questions.flatMap(({ key, enabled, required, label, helperText, sortOrder, options }) => isConfigurableRsvpQuestionKey(key) ? [{ key, enabled, required, label, helperText, sortOrder, ...(key === 'mealChoice' ? { options: options ?? [] } : {}) }] : [])
 }
 
 export function RsvpConfigurationForm({ configuration, onSaved, onSessionExpired }: Props) {
@@ -43,14 +44,14 @@ export function RsvpConfigurationForm({ configuration, onSaved, onSessionExpired
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) return onSessionExpired()
       if (error instanceof ApiError && error.status === 422) {
-        for (const [path, messages] of Object.entries(error.validationErrors ?? {})) if (/^questions(?:\.\d+\.(?:enabled|required|label|helperText|sortOrder|key))?$/.test(path)) form.setError(path as never, { type: 'server', message: messages[0] })
+        for (const [path, messages] of Object.entries(error.validationErrors ?? {})) if (/^questions(?:\.\d+\.(?:enabled|required|label|helperText|sortOrder|key|options(?:\.\d+\.(?:label|value|sortOrder|enabled))?))?$/.test(path)) form.setError(path as never, { type: 'server', message: messages[0] })
         form.setError('root.server', { message: 'Please review the highlighted configuration.' })
       } else form.setError('root.server', { message: 'RSVP configuration could not be saved. Please try again.' })
     }
   }
 
   function renderQuestion({ question, index }: { question: RsvpConfigurationFormValues['questions'][number]; index: number }, position: number, group: typeof guestQuestions, scope: RsvpQuestionScope) {
-    return <QuestionCard key={question.key} index={index} name={question.label} scope={scope} enabled={question.enabled} required={question.required} first={position === 0} last={position === group.length - 1} register={form.register} errors={form.formState.errors} onEnabledChange={(enabled) => { form.setValue(`questions.${index}.enabled`, enabled, { shouldDirty: true }); if (!enabled) form.setValue(`questions.${index}.required`, false, { shouldDirty: true, shouldValidate: true }) }} onMove={(direction) => move(index, direction, scope)} />
+    return <div key={question.key} className="space-y-4"><QuestionCard index={index} name={question.label} scope={scope} enabled={question.enabled} required={question.required} first={position === 0} last={position === group.length - 1} register={form.register} errors={form.formState.errors} onEnabledChange={(enabled) => { form.setValue(`questions.${index}.enabled`, enabled, { shouldDirty: true }); if (!enabled) form.setValue(`questions.${index}.required`, false, { shouldDirty: true, shouldValidate: true }) }} onMove={(direction) => move(index, direction, scope)} />{question.key === 'mealChoice' ? <MealOptionEditor index={index} form={form} errors={form.formState.errors} /> : null}</div>
   }
 
   return <form onSubmit={form.handleSubmit(submit)} noValidate className="space-y-7"><section><h2 className="font-[var(--font-display)] text-2xl">Guest questions</h2><p className="mt-1 text-sm text-[var(--color-muted)]">Attendance is always required for every named guest.</p><div className="mt-5 grid gap-5 xl:grid-cols-2"><SystemAttendanceCard />{guestQuestions.map((item, position) => renderQuestion(item, position, guestQuestions, 'guest'))}</div></section><section><h2 className="font-[var(--font-display)] text-2xl">Household questions</h2><p className="mt-1 text-sm text-[var(--color-muted)]">Shown once for the household response.</p><div className="mt-5 grid gap-5 xl:grid-cols-2">{householdQuestions.map((item, position) => renderQuestion(item, position, householdQuestions, 'household'))}</div></section>{form.formState.errors.root?.server ? <p className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-sm text-[var(--color-error)]" role="alert">{form.formState.errors.root.server.message}</p> : null}<div className="min-h-6" aria-live="polite">{form.formState.isSubmitSuccessful && !form.formState.isDirty ? <p className="text-sm font-medium text-[var(--color-success)]">RSVP configuration saved.</p> : null}</div><div className="sticky bottom-4 z-20 flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-surface)_94%,transparent)] p-4 shadow-[var(--shadow-soft)] backdrop-blur"><p className="text-sm text-[var(--color-muted)]">{form.formState.isDirty ? 'You have unsaved changes.' : 'All changes are saved.'}</p><ActionButton type="submit" disabled={!form.formState.isDirty || form.formState.isSubmitting}><Save className="size-4" aria-hidden="true" />{form.formState.isSubmitting ? 'Saving…' : 'Save configuration'}</ActionButton></div></form>
